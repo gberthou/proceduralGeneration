@@ -20,7 +20,7 @@ class PerlinNoise
                     const pg::Distribution<T, Dist> &distribution,
                     const std::array<size_t, DIM> &dim):
             engine(generator, distribution),
-            dimensions(dim),
+            dimensions(increaseArray(dim)),
             grid(gridSize())
         {
             for(size_t i = 0; i < grid.size(); ++i)
@@ -111,6 +111,38 @@ class PerlinNoise
             return product;
         }
 
+        /* x must be non-negative */
+        static inline T fractionalPart(T x)
+        {
+            return x - std::floor(x);
+        }
+
+        static inline T lerp(T a, T b, T w)
+        {
+            return (1 - w) * a + w * b;
+        }
+
+        static inline T smooth(T x)
+        {
+            T xsq = x * x;
+            return xsq * x * (6 * xsq - 15 * x + 10); // 6x^5 - 15x^4 + 10x^3
+        }
+
+        pg::RandomEngine<T, Dist> engine;
+
+        std::array<size_t, DIM> dimensions;
+        std::vector<Tuple> grid;
+
+    private:
+        static std::array<size_t, DIM> increaseArray
+                (const std::array<size_t, DIM> &array)
+        {
+            std::array<size_t, DIM> ret;
+            for(size_t i = 0; i < DIM; ++i)
+                ret[i] = array[i] + 1;
+            return ret;
+        }
+
         /* Recursive method, splits the exploration space in binary subtrees */
         T computeLocalContribution(const Tuple &point,
                                    const std::array<uint8_t, DIM> &base,
@@ -134,32 +166,11 @@ class PerlinNoise
 
             return lerp(leftResult, rightResult, factor);
         }
-
-        /* x must be non-negative */
-        static inline T fractionalPart(T x)
-        {
-            return x - std::floor(x);
-        }
-
-        static inline T lerp(T a, T b, T w)
-        {
-            return (1 - w) * a + w * b;
-        }
-
-        static inline T smooth(T x)
-        {
-            T xsq = x * x;
-            return xsq * x * (6 * xsq - 15 * x + 10); // 6x^5 - 15x^4 + 10x^3
-        }
-
-        pg::RandomEngine<T, Dist> engine;
-
-        std::array<size_t, DIM> dimensions;
-        std::vector<Tuple> grid;
 };
         
 template <size_t DIM>
-class PerlinNoiseUniformFloat : public PerlinNoise<float, std::uniform_real_distribution, DIM>
+class PerlinNoiseUniformFloat :
+    public PerlinNoise<float, std::uniform_real_distribution, DIM>
 {
     public:
         PerlinNoiseUniformFloat(pg::NumberGenerator &generator,
