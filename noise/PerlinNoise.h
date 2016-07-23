@@ -88,9 +88,9 @@ class PerlinNoise
 
         const Tuple &at(const std::array<size_t, DIM> &indices) const
         {
-            size_t index = indices[0];
-            for(size_t i = 1; i < DIM; ++i)
-                index = index * dimensions[i - 1] + indices[i];
+            size_t index = indices[DIM - 1];
+            for(size_t i = DIM - 1; --i + 1; )
+                index = index * dimensions[i] + indices[i];
             return grid[index];
         }
 
@@ -120,7 +120,7 @@ class PerlinNoise
                 return contribution(point, base);
 
             // Else, non-leaf nodes
-            auto tmp = base;
+            std::array<uint8_t, DIM> tmp = base;
 
             // Compute left subtree
             tmp[dimIndex] = 0;

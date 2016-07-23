@@ -12,17 +12,20 @@
     
 const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 640;
-const size_t NOISE_DIM = 16;
+const size_t NOISE_DIM_X = 16;
+const size_t NOISE_DIM_Y = 16;
+const size_t NOISE_DIM_Z = 4;
 
 void refreshImage(sf::Image &image, const pg::PerlinNoiseUniformFloat<3> &noise,
                   float z)
 {
     for(unsigned int y = 0; y < HEIGHT; ++y)
     {
+        float fy = y * NOISE_DIM_Y / static_cast<float>(HEIGHT);
+
         for(unsigned int x = 0; x < WIDTH; ++x)
         {
-            float fx = x * NOISE_DIM / static_cast<float>(WIDTH);
-            float fy = y * NOISE_DIM / static_cast<float>(HEIGHT);
+            float fx = x * NOISE_DIM_X / static_cast<float>(WIDTH);
             sf::Uint8 value = noise({fx, fy, z}) * 255.f;
 
             image.setPixel(x, y, sf::Color(value, value, value));
@@ -48,12 +51,12 @@ int main()
         std::cout << nameGenerator() << std::endl;
 
     auto noise = pg::PerlinNoiseUniformFloat<3>
-            (rngenerator, {NOISE_DIM, NOISE_DIM, NOISE_DIM});
+            (rngenerator, {NOISE_DIM_X, NOISE_DIM_Y, NOISE_DIM_Z});
     
     sf::Image image;
-    image.create(640, 640);
+    image.create(WIDTH, HEIGHT);
 
-    float z = NOISE_DIM / 2.f;
+    float z = 0;
     refreshImage(image, noise, z);
     
     sf::Texture texture;
@@ -62,7 +65,10 @@ int main()
     sf::Sprite sprite;
     sprite.setTexture(texture);
 
-    sf::RenderWindow window(sf::VideoMode(640, 640), "Sample");
+    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Sample");
+    window.setFramerateLimit(60);
+    
+    float velocity = 0.025f;
     while(window.isOpen())
     {
         sf::Event event;
@@ -71,6 +77,22 @@ int main()
             if(event.type == sf::Event::Closed)
                 window.close();
         }
+        
+        z += velocity;
+        if(z < 0)
+        {
+            z = 0;
+            velocity *= -1;
+        }
+        else if(z >= NOISE_DIM_Z)
+        {
+            z = NOISE_DIM_Z - velocity;
+            velocity *= -1;
+        }
+
+        refreshImage(image, noise, z);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
 
         window.clear();
         window.draw(sprite);
