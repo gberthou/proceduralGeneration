@@ -25,6 +25,16 @@ class RandomEngine
             return distribution(generator);
         }
 
+        ResultType min() const
+        {
+            return distribution.min();
+        }
+
+        ResultType max() const
+        {
+            return distribution.max();
+        }
+
     protected:
         pg::NumberGenerator &generator;
         pg::Distribution<ResultType, Dist> distribution;

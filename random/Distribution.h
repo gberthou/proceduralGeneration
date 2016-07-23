@@ -21,12 +21,12 @@ namespace pg
                 return internalDistribution(g);
             }
 
-            result_type min()
+            result_type min() const
             {
                 return internalDistribution.min();
             }
 
-            result_type max()
+            result_type max() const
             {
                 return internalDistribution.max();
             }

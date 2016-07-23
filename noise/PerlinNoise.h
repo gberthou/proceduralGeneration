@@ -1,7 +1,8 @@
-#ifndef PERLIN_NOISE_2D_H
-#define PERLIN_NOISE_2D_H
+#ifndef PERLIN_NOISE_H
+#define PERLIN_NOISE_H
 
 #include <vector>
+#include <array>
 #include <cmath>
 
 #include "../random/RandomEngine.h"
@@ -9,76 +10,135 @@
 namespace pg
 {
 
-template<typename T, template<typename> class Dist>
-class PerlinNoise2D
+template<typename T, template<typename> class Dist, size_t DIM>
+class PerlinNoise
 {
     public:
-        PerlinNoise2D(pg::NumberGenerator &generator,
-                      const pg::Distribution<T, Dist> &distribution,
-                      unsigned int w, unsigned int h):
+        typedef std::array<T, DIM> Tuple;
+
+        PerlinNoise(pg::NumberGenerator &generator,
+                    const pg::Distribution<T, Dist> &distribution,
+                    const std::array<size_t, DIM> &dim):
             engine(generator, distribution),
-            width(w),
-            height(h),
-            grid(w * h)
+            dimensions(dim),
+            grid(gridSize())
         {
-            for(unsigned int i = 0; i < w * h; ++i)
-                grid[i] = generate2DVector();
+            for(size_t i = 0; i < grid.size(); ++i)
+                grid[i] = generateVector();
         }
 
-        virtual ~PerlinNoise2D() = default;
+        virtual ~PerlinNoise() = default;
 
-        
-        /* x must be in range [0, width[
-         * y must be in range [0, height[
+        /* input must be in range [0, dimension.i[
          * output in range [0, 1]
          */
-        T operator()(T x, T y) const
+        T operator()(const Tuple &point) const
         {
-            unsigned int x0 = floor(x);
-            unsigned int y0 = floor(y);
-            unsigned int x1 = x0 + 1;
-            unsigned int y1 = y0 + 1;
-            T factorX = smooth(x - x0);
-            T factorY = smooth(y - y0);
-
-            T contribution00 = contribution(x, y, x0, y0);
-            T contribution10 = contribution(x, y, x1, y0);
-            T contribution01 = contribution(x, y, x0, y1);
-            T contribution11 = contribution(x, y, x1, y1);
-
-            T intermediate0 = lerp(contribution00, contribution10, factorX);
-            T intermediate1 = lerp(contribution01, contribution11, factorX);
-            
-            return (lerp(intermediate0, intermediate1, factorY) + 1) / 2.;
+            std::array<uint8_t, DIM> base;
+            // No need to initialize the array since computeLocalContribution
+            // already does it
+            return (computeLocalContribution(point, base, 0) + 1) / 2.;
         }
 
     protected:
-        struct Tuple
-        {
-            T x;
-            T y;
-        };
 
-        virtual Tuple generate2DVector()
+        size_t gridSize() const
         {
-            T number = engine();
-            Tuple ret;
-            ret.x = std::cos(number);
-            ret.y = std::sin(number);
+            size_t ret = 1;
+            for(size_t x : dimensions)
+                ret *= x;
             return ret;
         }
 
-        inline const Tuple &at(unsigned int x, unsigned int y) const
+        /* Generates a scalarin range [0, 1] */
+        inline T generateScalar()
         {
-            return grid[x + y * width];
+            return (engine() - engine.min()) / (engine.max() - engine.min());
         }
 
-        T contribution(T x, T y, unsigned int xRef, unsigned int yRef) const
+        virtual Tuple generateVector()
         {
-            T dx = x - xRef;
-            T dy = y - yRef;
-            const Tuple &tuple = at(xRef, yRef);
-            return dx * tuple.x + dy * tuple.y;
+            Tuple ret;
+            T sum2 = 0;
+            for(size_t i = 0; i + 1 < DIM; ++i)
+            {
+                // Generate number in range [-1,1]
+                ret[i] = 2 * generateScalar() - 1;
+                sum2 += ret[i] * ret[i];
+            }
+
+            // Now compute last vector so that length cannot be zero
+            const T EPSILON2 = 0.0001;
+            if(sum2 < EPSILON2)
+            {
+                ret[DIM - 1] = std::exp(engine()); // Always strictly positive
+                if(engine() < 0.5) // 50% numbers will be negative
+                    ret[DIM - 1] *= -1;
+            }
+            else
+                ret[DIM - 1] = 2 * generateScalar() - 1;
+            sum2 += ret[DIM - 1] * ret[DIM - 1];
+
+            T length = std::sqrt(sum2); // Should be always strictly positive
+            for(size_t i = 0; i < DIM; ++i)
+                ret[i] /= length;
+
+            return ret;
+        }
+
+        const Tuple &at(const std::array<size_t, DIM> &indices) const
+        {
+            size_t index = indices[0];
+            for(size_t i = 1; i < DIM; ++i)
+                index = index * dimensions[i - 1] + indices[i];
+            return grid[index];
+        }
+
+        T contribution(const Tuple &point,
+                       const std::array<uint8_t, DIM> &relativeRef) const
+        {
+            std::array<size_t, DIM> absoluteRef;
+            for(size_t i = 0; i < DIM; ++i)
+                absoluteRef[i] = std::floor(point[i]) + relativeRef[i];
+
+            const Tuple &tuple = at(absoluteRef);
+            T product = 0;
+            for(size_t i = 0; i < DIM; ++i)
+            {
+                product += (fractionalPart(point[i]) - relativeRef[i])
+                         * tuple[i];
+            }
+            return product;
+        }
+
+        /* Recursive method, splits the exploration space in binary subtrees */
+        T computeLocalContribution(const Tuple &point,
+                                   const std::array<uint8_t, DIM> &base,
+                                   size_t dimIndex) const
+        {
+            if(dimIndex == DIM) // Last dimension (leaf nodes)
+                return contribution(point, base);
+
+            // Else, non-leaf nodes
+            auto tmp = base;
+
+            // Compute left subtree
+            tmp[dimIndex] = 0;
+            T leftResult = computeLocalContribution(point, tmp, dimIndex + 1);
+
+            // Compute right subtree
+            tmp[dimIndex] = 1;
+            T rightResult = computeLocalContribution(point, tmp, dimIndex + 1);
+
+            T factor = smooth(fractionalPart(point[dimIndex]));
+
+            return lerp(leftResult, rightResult, factor);
+        }
+
+        /* x must be non-negative */
+        static inline T fractionalPart(T x)
+        {
+            return x - std::floor(x);
         }
 
         static inline T lerp(T a, T b, T w)
@@ -94,9 +154,27 @@ class PerlinNoise2D
 
         pg::RandomEngine<T, Dist> engine;
 
-        unsigned int width;
-        unsigned int height;
+        std::array<size_t, DIM> dimensions;
         std::vector<Tuple> grid;
+};
+        
+template <size_t DIM>
+class PerlinNoiseUniformFloat : public PerlinNoise<float, std::uniform_real_distribution, DIM>
+{
+    public:
+        PerlinNoiseUniformFloat(pg::NumberGenerator &generator,
+                                const std::array<size_t, DIM> &dim):
+            PerlinNoise<float, std::uniform_real_distribution, DIM>
+            (generator, std::uniform_real_distribution<float>{}, dim)
+        {
+        }
+
+        static PerlinNoiseUniformFloat<DIM> Create(
+                pg::NumberGenerator &generator,
+                const std::array<size_t, DIM> &dimensions)
+        {
+            return PerlinNoiseUniformFloat<DIM> (generator, dimensions);
+        }
 };
 }
 

@@ -9,6 +9,26 @@
 #include "random/StdNumberGenerator.h"
 #include "random/NameGenerator.h"
 #include "noise/PerlinNoise.h"
+    
+const unsigned int WIDTH = 640;
+const unsigned int HEIGHT = 640;
+const size_t NOISE_DIM = 16;
+
+void refreshImage(sf::Image &image, const pg::PerlinNoiseUniformFloat<3> &noise,
+                  float z)
+{
+    for(unsigned int y = 0; y < HEIGHT; ++y)
+    {
+        for(unsigned int x = 0; x < WIDTH; ++x)
+        {
+            float fx = x * NOISE_DIM / static_cast<float>(WIDTH);
+            float fy = y * NOISE_DIM / static_cast<float>(HEIGHT);
+            sf::Uint8 value = noise({fx, fy, z}) * 255.f;
+
+            image.setPixel(x, y, sf::Color(value, value, value));
+        }
+    }
+}
 
 int main()
 {
@@ -27,28 +47,15 @@ int main()
     for(unsigned int i = 0; i < 10; ++i)
         std::cout << nameGenerator() << std::endl;
 
-    const unsigned int NOISE_DIM = 16;
-
-    pg::Distribution<float, std::uniform_real_distribution>
-        distribution(std::uniform_real_distribution<float>{0,2.f*std::acos(-1)});
-    pg::PerlinNoise2D<float, std::uniform_real_distribution>
-        noise(rngenerator, distribution, NOISE_DIM, NOISE_DIM);
+    auto noise = pg::PerlinNoiseUniformFloat<3>
+            (rngenerator, {NOISE_DIM, NOISE_DIM, NOISE_DIM});
     
     sf::Image image;
     image.create(640, 640);
+
+    float z = NOISE_DIM / 2.f;
+    refreshImage(image, noise, z);
     
-    for(unsigned int y = 0; y < 640; ++y)
-    {
-        for(unsigned int x = 0; x < 640; ++x)
-        {
-            float fx = x * NOISE_DIM / 640.f;
-            float fy = y * NOISE_DIM / 640.f;
-            sf::Uint8 value = noise(fx, fy) * 255.f;
-
-            image.setPixel(x, y, sf::Color(value, value, value));
-        }
-    }
-
     sf::Texture texture;
     texture.loadFromImage(image);
 
