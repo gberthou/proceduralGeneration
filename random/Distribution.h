@@ -42,6 +42,14 @@ namespace pg
         return pg::Distribution<unsigned int, std::uniform_int_distribution>
                (dist);
     }
+    
+    pg::Distribution<float, std::uniform_real_distribution>
+        CreateDistributionUniformFloat(float min, float max)
+    {
+        std::uniform_real_distribution<float> dist(min, max);
+        return pg::Distribution<float, std::uniform_real_distribution>
+               (dist);
+    }
 }
 
 

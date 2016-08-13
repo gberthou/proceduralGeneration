@@ -1,109 +1,185 @@
-#ifndef VORONOI_h
+#ifndef VORONOI_H
 #define VORONOI_H
 
+#include <iostream>
 #include <vector>
-#include <array>
-#include <algorithm>
+#include <map>
+#include <boost/polygon/voronoi.hpp>
+
+#include "../core/Map.h"
+
+template<typename T>
+struct VPoint
+{
+    T a;
+    T b;
+
+    VPoint(T x, T y):
+        a(x), b(y)
+    {
+    }
+};
+
+template<typename T>
+struct VSegment
+{
+    VPoint<T> p0;
+    VPoint<T> p1;
+
+    VSegment(T x1, T y1, T x2, T y2):
+        p0(x1, y1), p1(x2, y2)
+    {
+    }
+};
+
+namespace boost
+{
+    namespace polygon
+    {
+        template <typename T>
+        struct geometry_concept<VPoint<T>>
+        {
+            typedef point_concept type;
+        };
+
+        template <typename T>
+        struct point_traits<VPoint<T>>
+        {
+            typedef T coordinate_type;
+
+            static inline coordinate_type get(const VPoint<T>& point,
+                                              orientation_2d orient)
+            {
+                    return (orient == HORIZONTAL) ? point.a : point.b;
+            }
+        };
+
+        template <typename T>
+        struct geometry_concept<VSegment<T>>
+        {
+              typedef segment_concept type;
+        };
+
+        template <typename T>
+        struct segment_traits<VSegment<T>>
+        {
+            typedef T coordinate_type;
+            typedef VPoint<T> point_type;
+
+            static inline point_type get(const VSegment<T>& segment,
+                                         direction_1d dir)
+            {
+                return dir.to_int() ? segment.p1 : segment.p0;
+            }
+        };
+    }
+}
 
 namespace pg
 {
-    /*
     template<typename T>
-    struct Distance
+    class VoronoiMap : public pg::Map<T>
     {
-        const std::array<T, 2> &point;
-        T distance;
-    };
-
-    template<typename T>
-    bool operator<(const Distance<T> &a, const Distance<T> &b)
-    {
-        return a.distance < b.distance;
-    }
-
-    template <typename T, size_t N>
-    static T dist2(const std::array<T, N> &a, const std::array<T, N> &b)
-    {
-        T ret = 0;
-        for(size_t i = 0; i < N; ++i)
-        {
-            T tmp = a[i] - b[i];
-            ret += tmp * tmp;
-        }
-        return ret;
-    }
-    */
-
-    template<typename T>
-    using Point = std::array<T, 2>;
-
-    template<typename T>
-    using Triangle = std::array<Point<T>, 3>;
-
-    template<typename T>
-    Triangle<T> boundingTriangle(const std::vector<Point<T>> &points)
-    {
-        /* Compute center */
-        Point<T> center = {0, 0};
-        for(auto point : points)
-            for(size_t i = 0; i < point.size(); ++i)
-                center[i] += point[i];
-        for(size_t i = 0; i < center.size(); ++i)
-            center[i] /= points.size();
-
-        /* Compute largest distance to center */
-        T maxDistance = 0;
-        for(auto point : points)
-        {
-            T distance = 0;
-            for(size_t i = 0; i < point.size(); ++i)
-                distance += (point[i] - center[i]) * (point[i] - center[i]);
-            if(distance > maxDistance)
-                maxDistance = distance;
-        }
-        T radius = 1.1 * std::sqrt(maxDistance);
-
-        /* Take an arbitrary triangle which inscribed circle is the one 
-         * computed above */
-        Triangle<T> ret;
-        ret[0] = {center[0] - 2*radius, center[1] + radius};
-        ret[1] = {center[0] + 2*radius, center[1] + radius};
-
-        /*
-        const T sqrt2 = std::sqrt(2.);
-        T k = 2. / (2 - sqrt2 / (radius + 1));
-        ret[2] = {(1-k) * ret[0] - k * sqrt2/2.,
-                  (1-k) * ret[1] - k * sqrt2/2.};
-        */
-        ret[2] = {center[0] * 3 - ret[0][0] - ret[1][0],
-                  center[1] * 3 - ret[0][1] - ret[1][0]};
-        return ret;
-    }
-
-    template<typename T>
-    void Voronoi(const std::vector<Point<T>> &points,
-                 std::vector<Triangle<T>> &triangles)
-    {
-        /*
-        for(size_t i = 0; i < points.size(); ++i)
-        {
-            std::vector<Distance<T>> distances;
-            for(size_t j = 0; j < points.size(); ++j)
+        public:
+            explicit VoronoiMap<T>(const std::vector<VPoint<T>> &points)
             {
-                if(i != j)
-                    distances.push_back({points[j], dist2(pints[i],points[j])});
+                std::vector<VSegment<T>> segments;
+                boost::polygon::construct_voronoi(
+                    points.begin(), points.end(),
+                    segments.begin(), segments.end(),
+                    &diagram);
+
+                // Populate parent-class attributes
+                
+                std::map<const boost::polygon::voronoi_vertex<double>*, size_t> m;
+                for(auto it = diagram.vertices().cbegin();
+                    it != diagram.vertices().cend();
+                    ++it)
+                {
+                    auto vertex = *it;
+                    if(vertex.incident_edge()->is_primary())
+                    {
+                        T x = static_cast<T>(vertex.x());
+                        T y = static_cast<T>(vertex.y());
+            
+                        //if(pointBelongsToMap({x, y}))
+                        {
+                            m.insert(std::pair<const boost::polygon::voronoi_vertex<double>*, size_t>(&*it, pg::Map<T>::vertices.size()));
+
+                            pg::Map<T>::vertices.push_back({x, y});
+                        }
+                    }
+                }
+
+                for(auto edge : diagram.edges())
+                {
+                    if(edge.is_primary())
+                    {
+                        // Should never happen
+                        if(edge.vertex0() == nullptr
+                        && edge.vertex1() == nullptr)
+                        {
+                            continue;
+                        }
+                        
+                        if(edge.vertex0() == nullptr)
+                        {
+                        }
+                        else if(edge.vertex1() == nullptr)
+                        {
+                        }
+                        else
+                        {
+                            auto it0 = m.find(edge.vertex0());
+                            auto it1 = m.find(edge.vertex1());
+
+                            if(it0 != m.end() && it1 != m.end())
+                            {
+                                pg::MapEdge edge = {it0->second, it1->second};
+                                pg::Map<T>::edges.push_back(edge);
+                            }
+                        }
+                    }
+                }
             }
 
-            // Take the closest 3 points
-            std::partial_sort(distances.begin(), distances.begin() + 3,
-                              distances.end());
-        }
-        */
+            virtual ~VoronoiMap<T>() = default;
 
-        triangles.clear();
-        Triangle<T> superTriangle = boundingTriangle(points);
-        triangles.push_back(superTriangle);
-    }
+        protected:
+            virtual bool pointBelongsToMap(const MapPoint<T> &point) const = 0;
+
+            boost::polygon::voronoi_diagram<double> diagram;
+
+    };
+    
+    template<typename T>
+    class RectVoronoiMap : public pg::VoronoiMap<T>
+    {
+        public:
+            RectVoronoiMap<T>(T miX, T maX, T miY, T maY,
+                              const std::vector<VPoint<T>> &points):
+                VoronoiMap<T>(points),
+                minX(miX),
+                maxX(maX),
+                minY(miY),
+                maxY(maY)
+            {
+            }
+
+            virtual ~RectVoronoiMap<T>() = default;
+
+        protected:
+            bool pointBelongsToMap(const MapPoint<T> &point) const
+            {
+                return point.x >= minX && point.x <= maxX
+                    && point.y >= minY && point.y <= maxY;
+            }
+            
+            T minX;
+            T maxX;
+            T minY;
+            T maxY;
+    };
 }
 
 #endif

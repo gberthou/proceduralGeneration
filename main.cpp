@@ -105,41 +105,69 @@ void TestPerlinNoise(pg::StdNumberGenerator &rngenerator)
 
 void TestVoronoi(pg::StdNumberGenerator &rngenerator)
 {
-    std::vector<pg::Point<float>> points;
+    std::vector<VPoint<float>> points;
 
     auto distributionX = pg::CreateDistributionUniformUint(WIDTH/4, WIDTH*3/4);
     auto distributionY = pg::CreateDistributionUniformUint(HEIGHT/4,HEIGHT*3/4);
-    const size_t N_POINTS = 16;
+    const size_t N_POINTS = 64;
     for(size_t i = 0; i < N_POINTS; ++i)
     {
-        pg::Point<float> tmp;
-        tmp[0] = distributionX(rngenerator);
-        tmp[1] = distributionY(rngenerator);
+        VPoint<float> tmp(distributionX(rngenerator), distributionY(rngenerator));
         points.push_back(tmp);
     }
 
-    std::vector<pg::Triangle<float>> triangles;
-    pg::Voronoi<float>(points, triangles);
+    pg::RectVoronoiMap<float> map(0, WIDTH, 0, HEIGHT, points);
+
+    //std::vector<pg::Triangle> triangles;
+    //pg::Voronoi<float>(points, triangles);
     
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
 
+    /*
     for(auto triangle : triangles)
     {
         sf::ConvexShape polygon(3);
         for(size_t i = 0; i < triangle.size(); ++i)
-            polygon.setPoint(i, {triangle[i][0], triangle[i][1]});
+        {
+            auto tmp = points[triangle[i]];
+            polygon.setPoint(i, {tmp[0], tmp[1]});
+        }
         polygon.setOutlineColor(sf::Color(255, 255, 255));
-        polygon.setOutlineThickness(2);
+        polygon.setOutlineThickness(1);
         polygon.setFillColor(sf::Color::Transparent);
         texture.draw(polygon);
     }
+    */
 
     for(auto point : points)
     {
-        sf::CircleShape circle(5);
+        const float RADIUS = 2.5;
+        sf::CircleShape circle(RADIUS);
         circle.setFillColor(sf::Color(255, 0, 0));
-        circle.setPosition(point[0], point[1]);
+        circle.setPosition(point.a - RADIUS, point.b - RADIUS);
+        texture.draw(circle);
+    }
+
+    for(auto edge : map.GetEdges())
+    {
+        auto vertices = map.GetVertices();
+
+        sf::Vertex line[] =
+        {
+            sf::Vertex(sf::Vector2f(vertices[edge.p0].x, vertices[edge.p0].y)),
+            sf::Vertex(sf::Vector2f(vertices[edge.p1].x, vertices[edge.p1].y))
+        };
+
+        texture.draw(line, 2, sf::Lines);
+    }
+    
+    for(auto point : map.GetVertices())
+    {
+        const float RADIUS = 1;
+        sf::CircleShape circle(RADIUS);
+        circle.setFillColor(sf::Color(0, 255, 0));
+        circle.setPosition(point.x - RADIUS, point.y - RADIUS);
         texture.draw(circle);
     }
 
