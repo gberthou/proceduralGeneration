@@ -105,6 +105,7 @@ void TestPerlinNoise(pg::StdNumberGenerator &rngenerator)
 
 void TestVoronoi(pg::StdNumberGenerator &rngenerator)
 {
+    /*
     std::vector<VPoint<float>> points;
 
     auto distributionX = pg::CreateDistributionUniformUint(WIDTH/4, WIDTH*3/4);
@@ -115,7 +116,13 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
         VPoint<float> tmp(distributionX(rngenerator), distributionY(rngenerator));
         points.push_back(tmp);
     }
+    */
 
+    std::vector<pg::MapPoint<float>> points;
+    pg::CreateRandomizedGrid<float>(rngenerator, points,
+                                    WIDTH / 4, WIDTH * 3 / 4,
+                                    HEIGHT / 4, HEIGHT * 3 / 4,
+                                    8, 8);
     pg::RectVoronoiMap<float> map(0, WIDTH, 0, HEIGHT, points);
 
     //std::vector<pg::Triangle> triangles;
@@ -145,7 +152,7 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
         const float RADIUS = 2.5;
         sf::CircleShape circle(RADIUS);
         circle.setFillColor(sf::Color(255, 0, 0));
-        circle.setPosition(point.a - RADIUS, point.b - RADIUS);
+        circle.setPosition(point.x - RADIUS, point.y - RADIUS);
         texture.draw(circle);
     }
 

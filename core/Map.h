@@ -46,7 +46,7 @@ namespace pg
     };
 
     template<typename T>
-    void CreateRandomizedGrid(const NumberGenerator &rngenerator,
+    void CreateRandomizedGrid(NumberGenerator &rngenerator,
                               std::vector<MapPoint<T>> &points,
                               T minX, T maxX, T minY, T maxY,
                               size_t tileCountX, size_t tileCountY)

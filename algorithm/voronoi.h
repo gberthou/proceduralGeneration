@@ -14,6 +14,11 @@ struct VPoint
     T a;
     T b;
 
+    VPoint():
+        a(0), b(0)
+    {
+    }
+
     VPoint(T x, T y):
         a(x), b(y)
     {
@@ -78,6 +83,18 @@ namespace boost
 namespace pg
 {
     template<typename T>
+    std::vector<VPoint<T>> convertPoints(
+        const std::vector<pg::MapPoint<T>> &points)
+    {
+        std::vector<VPoint<T>> ret;
+        ret.resize(points.size());
+        for(size_t i = 0; i < points.size(); ++i)
+            ret[i] = {points[i].x, points[i].y};
+
+        return ret;
+    }
+
+    template<typename T>
     class VoronoiMap : public pg::Map<T>
     {
         public:
@@ -113,36 +130,27 @@ namespace pg
 
                 for(auto edge : diagram.edges())
                 {
-                    if(edge.is_primary())
+                    if(edge.is_primary()
+                    && edge.vertex0() != nullptr
+                    && edge.vertex1() != nullptr)
                     {
-                        // Should never happen
-                        if(edge.vertex0() == nullptr
-                        && edge.vertex1() == nullptr)
-                        {
-                            continue;
-                        }
-                        
-                        if(edge.vertex0() == nullptr)
-                        {
-                        }
-                        else if(edge.vertex1() == nullptr)
-                        {
-                        }
-                        else
-                        {
-                            auto it0 = m.find(edge.vertex0());
-                            auto it1 = m.find(edge.vertex1());
+                        auto it0 = m.find(edge.vertex0());
+                        auto it1 = m.find(edge.vertex1());
 
-                            if(it0 != m.end() && it1 != m.end())
-                            {
-                                pg::MapEdge edge = {it0->second, it1->second};
-                                pg::Map<T>::edges.push_back(edge);
-                            }
+                        if(it0 != m.end() && it1 != m.end())
+                        {
+                            pg::MapEdge edge = {it0->second, it1->second};
+                            pg::Map<T>::edges.push_back(edge);
                         }
                     }
                 }
             }
-
+            
+            explicit VoronoiMap<T>(const std::vector<pg::MapPoint<T>> &points):
+                VoronoiMap<T>(convertPoints(points))
+            {
+            }
+            
             virtual ~VoronoiMap<T>() = default;
 
         protected:
@@ -163,6 +171,12 @@ namespace pg
                 maxX(maX),
                 minY(miY),
                 maxY(maY)
+            {
+            }
+            
+            RectVoronoiMap<T>(T miX, T maX, T miY, T maY,
+                              const std::vector<pg::MapPoint<T>> &points):
+                RectVoronoiMap<T>(miX, maX, miY, maY, convertPoints(points))
             {
             }
 
