@@ -119,12 +119,11 @@ namespace pg
                         T x = static_cast<T>(vertex.x());
                         T y = static_cast<T>(vertex.y());
             
-                        //if(pointBelongsToMap({x, y}))
-                        {
-                            m.insert(std::pair<const boost::polygon::voronoi_vertex<double>*, size_t>(&*it, pg::Map<T>::vertices.size()));
+                        m.insert(std::pair<const
+                        boost::polygon::voronoi_vertex<double>*, size_t>(
+                            &*it, pg::Map<T>::vertices.size()));
 
-                            pg::Map<T>::vertices.push_back({x, y});
-                        }
+                        pg::Map<T>::vertices.push_back({x, y});
                     }
                 }
 
@@ -154,8 +153,6 @@ namespace pg
             virtual ~VoronoiMap<T>() = default;
 
         protected:
-            virtual bool pointBelongsToMap(const MapPoint<T> &point) const = 0;
-
             boost::polygon::voronoi_diagram<double> diagram;
 
     };
@@ -172,6 +169,7 @@ namespace pg
                 minY(miY),
                 maxY(maY)
             {
+                filterOutVerticesAndEdges();
             }
             
             RectVoronoiMap<T>(T miX, T maX, T miY, T maY,
@@ -183,7 +181,39 @@ namespace pg
             virtual ~RectVoronoiMap<T>() = default;
 
         protected:
-            bool pointBelongsToMap(const MapPoint<T> &point) const
+            void filterOutVerticesAndEdges()
+            {
+                std::vector<pg::MapPoint<T>> &vertices = pg::Map<T>::vertices;
+                std::vector<pg::MapEdge> &edges = pg::Map<T>::edges;
+
+                for(size_t i = 0; i < vertices.size();)
+                {
+                    if(!pointBelongsToMap(vertices[i]))
+                    {
+                        for(size_t j = 0; j != edges.size();)
+                        {
+                            pg::MapEdge &edge = edges[j];
+                            if(edge.p0 == i || edge.p1 == i)
+                            {
+                                edges.erase(edges.begin() + j);
+                            }
+                            else
+                            {
+                                if(edge.p0 > i)
+                                    --edge.p0;
+                                if(edge.p1 > i)
+                                    --edge.p1;
+                                ++j;
+                            }
+                        }
+                        vertices.erase(vertices.begin() + i);
+                    }
+                    else
+                        ++i;
+                }
+            }
+
+            virtual bool pointBelongsToMap(const MapPoint<T> &point) const
             {
                 return point.x >= minX && point.x <= maxX
                     && point.y >= minY && point.y <= maxY;

@@ -105,47 +105,16 @@ void TestPerlinNoise(pg::StdNumberGenerator &rngenerator)
 
 void TestVoronoi(pg::StdNumberGenerator &rngenerator)
 {
-    /*
-    std::vector<VPoint<float>> points;
-
-    auto distributionX = pg::CreateDistributionUniformUint(WIDTH/4, WIDTH*3/4);
-    auto distributionY = pg::CreateDistributionUniformUint(HEIGHT/4,HEIGHT*3/4);
-    const size_t N_POINTS = 64;
-    for(size_t i = 0; i < N_POINTS; ++i)
-    {
-        VPoint<float> tmp(distributionX(rngenerator), distributionY(rngenerator));
-        points.push_back(tmp);
-    }
-    */
-
     std::vector<pg::MapPoint<float>> points;
     pg::CreateRandomizedGrid<float>(rngenerator, points,
                                     WIDTH / 4, WIDTH * 3 / 4,
                                     HEIGHT / 4, HEIGHT * 3 / 4,
-                                    8, 8);
-    pg::RectVoronoiMap<float> map(0, WIDTH, 0, HEIGHT, points);
+                                    16, 16);
+    pg::RectVoronoiMap<float> map(WIDTH/4, WIDTH*3/4, HEIGHT/4, HEIGHT*3/4,
+                                  points);
 
-    //std::vector<pg::Triangle> triangles;
-    //pg::Voronoi<float>(points, triangles);
-    
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
-
-    /*
-    for(auto triangle : triangles)
-    {
-        sf::ConvexShape polygon(3);
-        for(size_t i = 0; i < triangle.size(); ++i)
-        {
-            auto tmp = points[triangle[i]];
-            polygon.setPoint(i, {tmp[0], tmp[1]});
-        }
-        polygon.setOutlineColor(sf::Color(255, 255, 255));
-        polygon.setOutlineThickness(1);
-        polygon.setFillColor(sf::Color::Transparent);
-        texture.draw(polygon);
-    }
-    */
 
     for(auto point : points)
     {
@@ -156,10 +125,9 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
         texture.draw(circle);
     }
 
+    auto vertices = map.GetVertices();
     for(auto edge : map.GetEdges())
     {
-        auto vertices = map.GetVertices();
-
         sf::Vertex line[] =
         {
             sf::Vertex(sf::Vector2f(vertices[edge.p0].x, vertices[edge.p0].y)),

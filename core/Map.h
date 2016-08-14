@@ -39,8 +39,6 @@ namespace pg
             }
 
         protected:
-            virtual bool pointBelongsToMap(const MapPoint<T> &point) const = 0;
-
             std::vector<MapPoint<T>> vertices;
             std::vector<MapEdge> edges;
     };
