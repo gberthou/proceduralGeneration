@@ -6,10 +6,10 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "random/StdNumberGenerator.h"
-#include "random/NameGenerator.h"
-#include "noise/PerlinNoise.h"
-#include "algorithm/voronoi.h"
+#include "random/StdNumberGenerator.hpp"
+#include "random/NameGenerator.hpp"
+#include "noise/PerlinNoise.hpp"
+#include "algorithm/voronoi.hpp"
     
 const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 640;

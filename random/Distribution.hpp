@@ -1,9 +1,8 @@
-#ifndef DISTRIBUTION_H
-#define DISTRIBUTION_H
+#ifndef DISTRIBUTION_HPP
+#define DISTRIBUTION_HPP
 
 namespace pg
 {
-
     template<typename result_type, template<typename> class Dist>
     class Distribution
     {

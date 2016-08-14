@@ -1,11 +1,11 @@
-#ifndef PERLIN_NOISE_H
-#define PERLIN_NOISE_H
+#ifndef PERLIN_NOISE_HPP
+#define PERLIN_NOISE_HPP
 
 #include <vector>
 #include <array>
 #include <cmath>
 
-#include "../random/RandomEngine.h"
+#include "../random/RandomEngine.hpp"
 
 namespace pg
 {

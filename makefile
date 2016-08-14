@@ -18,8 +18,14 @@ OBJS=$(patsubst %.cpp,$(OBJDIR)/%.o,$(CPPFILES))
 $(OBJDIR)/%.o : %.cpp
 	$(GPP) $(CFLAGS) $(INCDIR) -c $< -o $@ $(DEFINES)
 
+.PHONY: clean
+.PHONY: examples
+
 default: $(OBJS)
 	$(GPP) $(OBJS) -o $(BIN) $(LIBDIR) $(LIBS)
+
+examples:
+	cd examples && make examples
 
 build:
 	mkdir -p $(OBJDIR) $(OBJDIR)/random

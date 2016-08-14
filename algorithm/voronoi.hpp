@@ -1,12 +1,12 @@
-#ifndef VORONOI_H
-#define VORONOI_H
+#ifndef VORONOI_HPP
+#define VORONOI_HPP
 
 #include <iostream>
 #include <vector>
 #include <map>
 #include <boost/polygon/voronoi.hpp>
 
-#include "../core/Map.h"
+#include "../core/Map.hpp"
 
 template<typename T>
 struct VPoint
