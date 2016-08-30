@@ -6,10 +6,10 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "random/StdNumberGenerator.hpp"
-#include "random/Distribution.hpp"
-#include "algorithm/VoronoiMesh.hpp"
-#include "core/Map.hpp"
+#include "../random/StdNumberGenerator.hpp"
+#include "../random/Distribution.hpp"
+#include "../algorithm/VoronoiMesh.hpp"
+#include "../core/Map.hpp"
     
 void drawTile(sf::RenderTexture &texture, const pg::VoronoiTile<float, sf::Color> &tile,
               size_t width, size_t height)

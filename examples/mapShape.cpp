@@ -10,18 +10,19 @@
 #include "../random/Distribution.hpp"
 #include "../algorithm/voronoi.hpp"
     
-const unsigned int WIDTH = 640;
-const unsigned int HEIGHT = 640;
-
 void TestVoronoi(pg::StdNumberGenerator &rngenerator)
 {
+    const unsigned int WIDTH = 640;
+    const unsigned int HEIGHT = 640;
+
     std::vector<pg::MapPoint<float>> points;
     pg::CreateRandomizedGrid<float>(rngenerator, points,
                                     WIDTH / 4, WIDTH * 3 / 4,
                                     HEIGHT / 4, HEIGHT * 3 / 4,
                                     16, 16);
-    pg::RectVoronoiMap<float> map(WIDTH/4, WIDTH*3/4, HEIGHT/4, HEIGHT*3/4,
-                                  points);
+    pg::VoronoiMap<float> map;
+    map.AppendMesh(WIDTH/4, WIDTH*3/4, HEIGHT/4, HEIGHT*3/4,
+                   points);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);

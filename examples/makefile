@@ -11,7 +11,7 @@ LIBS=-lsfml-system -lsfml-window -lsfml-graphics
 %.o : %.cpp
 	$(GPP) $(CFLAGS) $(INCDIR) -c $< -o $@ $(DEFINES)
 
-examples: names perlin mapShape
+examples: names perlin mapShape simpleVoronoi
 	echo Done
 
 names: names.o
@@ -23,8 +23,11 @@ perlin: perlin.o
 mapShape: mapShape.o
 	$(GPP) $@.o -o $@ $(LIBDIR) $(LIBS)
 
+simpleVoronoi: simpleVoronoi.o
+	$(GPP) $@.o -o $@ $(LIBDIR) $(LIBS)
+
 clean:
-	rm -f *.o names perlin mapShape
+	rm -f *.o names perlin mapShape simpleVoronoi
 
 check:
 	cppcheck --inconclusive --enable=all .

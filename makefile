@@ -11,7 +11,7 @@ CFLAGS=-std=c++14 -Wall -Wextra -Werror -pedantic -O2 -g
 DEFINES=
 LIBS=-lsfml-system -lsfml-window -lsfml-graphics
 
-CPPFILES=$(wildcard *.cpp) $(wildcard random/*.cpp)
+CPPFILES=$(wildcard *.cpp) $(wildcard random/*.cpp) $(wildcard core/*.cpp)
 
 OBJS=$(patsubst %.cpp,$(OBJDIR)/%.o,$(CPPFILES))
 
@@ -28,7 +28,7 @@ examples:
 	cd examples && make examples
 
 build:
-	mkdir -p $(OBJDIR) $(OBJDIR)/random
+	mkdir -p $(OBJDIR) $(OBJDIR)/random $(OBJDIR)/core
 
 clean:
 	rm -f $(BIN) $(OBJS)

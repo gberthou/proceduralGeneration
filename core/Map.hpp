@@ -12,6 +12,29 @@ namespace pg
     {
         T x;
         T y;
+        
+        MapPoint():
+            x(0),
+            y(0)
+        {
+        }
+
+        MapPoint(T ax, T ay):
+            x(ax),
+            y(ay)
+        {
+        }
+
+        MapPoint(const MapPoint &other):
+            x(other.x),
+            y(other.y)
+        {
+        }
+        
+        bool operator!=(const MapPoint &other) const
+        {
+            return x != other.x || y != other.y;
+        }
     };
 
     struct MapEdge
@@ -27,20 +50,6 @@ namespace pg
         public:
             Map<T>() = default;
             virtual ~Map<T>() = default;
-
-            const std::vector<MapPoint<T>> GetVertices() const
-            {
-                return vertices;
-            }
-
-            const std::vector<MapEdge> GetEdges() const
-            {
-                return edges;
-            }
-
-        protected:
-            std::vector<MapPoint<T>> vertices;
-            std::vector<MapEdge> edges;
     };
 
     template<typename T>
@@ -51,7 +60,7 @@ namespace pg
     {
         points.clear();
 
-        T paceX = (maxX - minY) / tileCountX;
+        T paceX = (maxX - minX) / tileCountX;
         T paceY = (maxY - minY) / tileCountY;
         auto distribution = pg::CreateDistributionUniformFloat(0, 1);
         for(size_t y = 0; y < tileCountY; ++y)
