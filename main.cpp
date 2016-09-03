@@ -10,8 +10,31 @@
 #include "random/Distribution.hpp"
 #include "algorithm/VoronoiMesh.hpp"
 #include "core/Map.hpp"
+
+class ColorGenerator : public pg::PropertyGenerator<float, sf::Color>
+{
+    public:
+        ColorGenerator():
+            distribution(pg::CreateDistributionUniformUint(0x00, 0xff))
+        {
+        }
+        virtual ~ColorGenerator() = default;
+
+        virtual sf::Color operator()(const pg::VPoint<float> &)
+        {
+            sf::Uint8 colors[3];
+            for(size_t i = 0; i < 3; ++i)
+                colors[i] = distribution(rngenerator);
+            return sf::Color(colors[0], colors[1], colors[2]);
+        }
+
+    protected:
+        pg::StdNumberGenerator rngenerator;
+        pg::DistributionUniformUint distribution;
+};
     
-void drawTile(sf::RenderTexture &texture, const pg::VoronoiTile<float, sf::Color> &tile,
+void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
+              pg::VoronoiMesh<float, sf::Color> &mesh,
               size_t width, size_t height)
 {
     sf::Uint8 *pixels = new sf::Uint8[width*height*4];
@@ -22,12 +45,12 @@ void drawTile(sf::RenderTexture &texture, const pg::VoronoiTile<float, sf::Color
             vpoint.x = x;
             vpoint.y = y;
 
-            sf::Color color = tile.GetSiteAt(vpoint).properties;
+            sf::Color color = mesh.GetSiteAt(rngenerator, vpoint).properties;
             size_t i = (x+y*width)*4;
             pixels[i  ] = color.r;
             pixels[i+1] = color.g;
             pixels[i+2] = color.b;
-            pixels[i+3] = color.a;
+            pixels[i+3] = 0xff;
         }
     
     sf::Image image;
@@ -45,31 +68,13 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
     const unsigned int WIDTH = 640;
     const unsigned int HEIGHT = 640;
 
-    std::vector<pg::VPoint<float>> points;
-    pg::CreateRandomizedGrid<float>(rngenerator, points,
-                                    16, WIDTH / 2,
-                                    16, WIDTH / 2,
-                                    8, 8);
-
-    std::vector<pg::VoronoiSite<float, sf::Color>> sites(points.size());
-    for(size_t i = 0; i < points.size(); ++i)
-        sites[i] = {points[i], sf::Color(10*i, 10*i, 10*i)};
-
-    pg::VoronoiTile<float, sf::Color> map(sites);
+    ColorGenerator colorGenerator;
+    pg::VoronoiMesh<float, sf::Color> map(colorGenerator, 8, 8, 100, 100);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
    
-    drawTile(texture, map, WIDTH, HEIGHT);
-
-    for(auto point : points)
-    {
-        const float RADIUS = 2.5;
-        sf::CircleShape circle(RADIUS);
-        circle.setFillColor(sf::Color(255, 0, 0));
-        circle.setPosition(point.x - RADIUS, point.y - RADIUS);
-        texture.draw(circle);
-    }
+    drawMesh(rngenerator, texture, map, WIDTH, HEIGHT);
 
     sf::Sprite sprite;
     sprite.setTexture(texture.getTexture());

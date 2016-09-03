@@ -58,7 +58,7 @@ namespace pg
                               T minX, T maxX, T minY, T maxY,
                               size_t tileCountX, size_t tileCountY)
     {
-        points.clear();
+        points.resize(tileCountX * tileCountY);
 
         T paceX = (maxX - minX) / tileCountX;
         T paceY = (maxY - minY) / tileCountY;
@@ -69,7 +69,7 @@ namespace pg
                 MapPoint<T> point = {
                     minX + paceX * (x + distribution(rngenerator)),
                     minY + paceY * (y + distribution(rngenerator))};
-                points.push_back(point);
+                points[x + y * tileCountX] = point;
             }
     }
 }
