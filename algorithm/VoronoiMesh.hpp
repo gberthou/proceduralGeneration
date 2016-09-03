@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "../core/Map.hpp"
 #include "../core/Serializable.h"
@@ -136,6 +137,17 @@ namespace pg
             VoronoiSite<T, P> &GetSiteAt(pg::NumberGenerator &rngenerator,
                                          const VPoint<T> &point)
             {
+                struct Candidate
+                {
+                    VoronoiSite<T, P> site;
+                    float distance;
+
+                    bool operator<(const Candidate &a)
+                    {
+                        return distance < a.distance;
+                    }
+                };
+
                 int tileX = std::floor(point.x / unitX);
                 int tileY = std::floor(point.y / unitY);
                 VoronoiTile<T, P> &tile = TileAt(rngenerator, tileX, tileY);
@@ -148,20 +160,45 @@ namespace pg
                 size_t subtileX = subtileIndex % tileDensityX;
                 size_t subtileY = subtileIndex / tileDensityX;
 
+                std::vector<VoronoiTile<T, P>*> borderTiles;
+                std::vector<Candidate> candidates = {{site, distance}};
+
                 if(subtileX == 0) // Left border
                 {
+                    // Lookup tile on the left
+                    borderTiles.push_back(&TileAt(rngenerator, tileX-1, tileY));
                 }
                 else if(subtileX + 1 == tileDensityX) // Right border
                 {
+                    // Lookup tile on the right
+                    borderTiles.push_back(&TileAt(rngenerator, tileX+1, tileY));
                 }
-                else if(subtileY == 0) // Upper border
+
+                if(subtileY == 0) // Upper border
                 {
+                    // Lookup tile on the top
+                    borderTiles.push_back(&TileAt(rngenerator, tileX, tileY-1));
                 }
                 else if(subtileY + 1 == tileDensityY) // Lower border
                 {
+                    // Lookup tile on the bottom
+                    borderTiles.push_back(&TileAt(rngenerator, tileX, tileY+1));
                 }
 
-                return site;
+                for(auto borderTile : borderTiles)
+                {
+                    size_t subtileIndex;
+                    float distance;
+                    VoronoiSite<T, P> &site =
+                        borderTile->GetSiteAt(point, subtileIndex, distance);
+                    candidates.push_back({site, distance});
+                }
+
+                // Take the closest candidate to the point
+                std::partial_sort(candidates.begin(), candidates.begin() + 1,
+                                  candidates.end()); 
+
+                return candidates[0].site;
             }
 
         protected:
