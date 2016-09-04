@@ -63,9 +63,8 @@ namespace pg
 
             virtual ~VoronoiTile() = default;
 
-            VoronoiSite<T, P> &GetSiteAt(const VPoint<T> &point,
-                                         size_t &index,
-                                         float &distance)
+            VoronoiSite<T, P> &SiteAt(const VPoint<T> &point, size_t &index,
+                                      float &distance)
             {
                 if(sites.size() == 0)
                 {
@@ -134,8 +133,8 @@ namespace pg
                 return itInsert.first->second;
             }
             
-            VoronoiSite<T, P> &GetSiteAt(pg::NumberGenerator &rngenerator,
-                                         const VPoint<T> &point)
+            VoronoiSite<T, P> &SiteAt(pg::NumberGenerator &rngenerator,
+                                      const VPoint<T> &point)
             {
                 struct Candidate
                 {
@@ -154,8 +153,8 @@ namespace pg
 
                 size_t subtileIndex;
                 float distance;
-                VoronoiSite<T, P> &site = tile.GetSiteAt(point, subtileIndex,
-                                                         distance);
+                VoronoiSite<T, P> &site = tile.SiteAt(point, subtileIndex,
+                                                      distance);
 
                 size_t subtileX = subtileIndex % tileDensityX;
                 size_t subtileY = subtileIndex / tileDensityX;
@@ -190,7 +189,7 @@ namespace pg
                     size_t subtileIndex;
                     float distance;
                     VoronoiSite<T, P> &site =
-                        borderTile->GetSiteAt(point, subtileIndex, distance);
+                        borderTile->SiteAt(point, subtileIndex, distance);
                     candidates.push_back({site, distance});
                 }
 

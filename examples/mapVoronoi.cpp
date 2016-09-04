@@ -6,10 +6,10 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "random/StdNumberGenerator.hpp"
-#include "random/Distribution.hpp"
-#include "algorithm/VoronoiMesh.hpp"
-#include "core/Map.hpp"
+#include "../random/StdNumberGenerator.hpp"
+#include "../random/Distribution.hpp"
+#include "../algorithm/VoronoiMesh.hpp"
+#include "../core/Map.hpp"
 
 class ColorGenerator : public pg::PropertyGenerator<float, sf::Color>
 {
@@ -69,7 +69,7 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
     const unsigned int HEIGHT = 640;
 
     ColorGenerator colorGenerator;
-    pg::VoronoiMesh<float, sf::Color> map(colorGenerator, 8, 8, 120, 120);
+    pg::VoronoiMesh<float, sf::Color> map(colorGenerator, 8, 8, 150, 150);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);

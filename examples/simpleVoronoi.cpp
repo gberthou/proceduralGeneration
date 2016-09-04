@@ -11,8 +11,9 @@
 #include "../algorithm/VoronoiMesh.hpp"
 #include "../core/Map.hpp"
     
-void drawTile(sf::RenderTexture &texture, const pg::VoronoiTile<float, sf::Color> &tile,
-              size_t width, size_t height)
+void drawTile(sf::RenderTexture &texture,
+              pg::VoronoiTile<float, sf::Color> &tile, size_t width,
+              size_t height)
 {
     sf::Uint8 *pixels = new sf::Uint8[width*height*4];
     for(size_t y = 0; y < height; ++y)
@@ -22,7 +23,9 @@ void drawTile(sf::RenderTexture &texture, const pg::VoronoiTile<float, sf::Color
             vpoint.x = x;
             vpoint.y = y;
 
-            sf::Color color = tile.GetSiteAt(vpoint).properties;
+            size_t index;
+            float distance;
+            sf::Color color = tile.SiteAt(vpoint, index, distance).properties;
             size_t i = (x+y*width)*4;
             pixels[i  ] = color.r;
             pixels[i+1] = color.g;
