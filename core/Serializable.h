@@ -9,8 +9,8 @@ class Serializable
         Serializable() = default;
         virtual ~Serializable() = default;
 
-        virtual std::istream &Deserialize(std::istream &stream);
-        virtual std::ostream &Serialize(std::ostream &stream) const;
+        virtual std::istream &Deserialize(std::istream &stream) = 0;
+        virtual std::ostream &Serialize(std::ostream &stream) const = 0;
 };
 
 std::istream &operator>>(std::istream &stream, Serializable &object);

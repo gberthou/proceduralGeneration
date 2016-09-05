@@ -16,16 +16,52 @@ namespace pg
     using VPoint = MapPoint<T>;
 
     template<typename T, typename P>
-    struct VoronoiSite
+    struct VoronoiSite : public Serializable
     {
         VPoint<T> point;
         P properties;
+
+        std::istream &Deserialize(std::istream &stream)
+        {
+            stream >> point.x >> point.y >> properties;
+            return stream;
+        }
+        
+        std::ostream &Serialize(std::ostream &stream) const
+        {
+            stream << point.x << point.y << properties;
+            return stream;
+        }
     };
 
-    struct VoronoiTileCoord
+    struct VoronoiTileCoord : public Serializable
     {
         int x;
         int y;
+
+        VoronoiTileCoord():
+            x(0),
+            y(0)
+        {
+        }
+
+        VoronoiTileCoord(int a, int b):
+            x(a),
+            y(b)
+        {
+        }
+        
+        std::istream &Deserialize(std::istream &stream)
+        {
+            stream >> x >> y;
+            return stream;
+        }
+        
+        std::ostream &Serialize(std::ostream &stream) const
+        {
+            stream << x << y;
+            return stream;
+        }
     };
     bool operator<(const VoronoiTileCoord &a, const VoronoiTileCoord &b)
     {
@@ -53,9 +89,11 @@ namespace pg
     };
 
     template<typename T, typename P>
-    class VoronoiTile
+    class VoronoiTile : public Serializable
     {
         public:
+            VoronoiTile() = default;
+
             VoronoiTile(const std::vector<VoronoiSite<T, P>> &s):
                 sites(s)
             {
@@ -88,13 +126,32 @@ namespace pg
 
                 return sites[index];
             }
-        
+            
+            std::istream &Deserialize(std::istream &stream)
+            {
+                size_t size;
+                stream >> size;
+                
+                sites.resize(size);
+                for(size_t i = 0; i < size; ++i)
+                    stream >> sites[i];
+                return stream;
+            }
+            
+            std::ostream &Serialize(std::ostream &stream) const
+            {
+                stream << sites.size();
+                for(auto site : sites)
+                    stream << site;
+                return stream;
+            }
+
         protected:
             std::vector<VoronoiSite<T, P>> sites;
     };
 
     template<typename T, typename P>
-    class VoronoiMesh
+    class VoronoiMesh : public Serializable
     {
         public:
             VoronoiMesh(PropertyGenerator<T, P> &pgenerator,
@@ -138,7 +195,7 @@ namespace pg
             {
                 struct Candidate
                 {
-                    VoronoiSite<T, P> site;
+                    VoronoiSite<T, P> *site;
                     float distance;
 
                     bool operator<(const Candidate &a)
@@ -160,7 +217,7 @@ namespace pg
                 size_t subtileY = subtileIndex / tileDensityX;
 
                 std::vector<VoronoiTile<T, P>*> borderTiles;
-                std::vector<Candidate> candidates = {{site, distance}};
+                std::vector<Candidate> candidates = {{&site, distance}};
 
                 if(subtileX == 0) // Left border
                 {
@@ -190,14 +247,42 @@ namespace pg
                     float distance;
                     VoronoiSite<T, P> &site =
                         borderTile->SiteAt(point, subtileIndex, distance);
-                    candidates.push_back({site, distance});
+                    candidates.push_back({&site, distance});
                 }
 
                 // Take the closest candidate to the point
                 std::partial_sort(candidates.begin(), candidates.begin() + 1,
                                   candidates.end()); 
 
-                return candidates[0].site;
+                return *candidates[0].site;
+            }
+        
+            std::istream &Deserialize(std::istream &stream)
+            {
+                size_t size;
+                stream >> tileDensityX >> tileDensityY >> unitX >> unitY
+                       >> size;
+
+                tiles.clear();
+                for(size_t i = 0; i < size; ++i)
+                {
+                    VoronoiTileCoord key;
+                    VoronoiTile<T, P> value;
+
+                    stream >> key >> value;
+                    tiles.insert({key, value});
+                }
+                return stream;
+            }
+            
+            std::ostream &Serialize(std::ostream &stream) const
+            {
+                stream << tileDensityX << tileDensityY << unitX << unitY
+                       << tiles.size();
+                
+                for(auto tile : tiles)
+                    stream << tile.first << tile.second;
+                return stream;
             }
 
         protected:
