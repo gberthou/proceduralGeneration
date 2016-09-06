@@ -6,7 +6,7 @@ OBJDIR=obj
 LIBDIR= 
 INCDIR=
 
-CFLAGS=-std=c++14 -Wall -Wextra -Werror -pedantic -O2 -g
+CFLAGS=-std=c++11 -Wall -Wextra -Werror -pedantic -O2 -g
 
 DEFINES=
 LIBS=-lsfml-system -lsfml-window -lsfml-graphics

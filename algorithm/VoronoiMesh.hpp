@@ -8,7 +8,7 @@
 #include <algorithm>
 
 #include "../core/Map.hpp"
-#include "../core/Serializable.h"
+#include "../core/Serializable.hpp"
 
 namespace pg
 {
@@ -16,25 +16,25 @@ namespace pg
     using VPoint = MapPoint<T>;
 
     template<typename T, typename P>
-    struct VoronoiSite : public Serializable
+    struct VoronoiSite : public pg::Serializable
     {
         VPoint<T> point;
         P properties;
 
-        std::istream &Deserialize(std::istream &stream)
+        pg::InputStream &Deserialize(pg::InputStream &stream)
         {
             stream >> point.x >> point.y >> properties;
             return stream;
         }
         
-        std::ostream &Serialize(std::ostream &stream) const
+        pg::OutputStream &Serialize(pg::OutputStream &stream) const
         {
             stream << point.x << point.y << properties;
             return stream;
         }
     };
 
-    struct VoronoiTileCoord : public Serializable
+    struct VoronoiTileCoord : public pg::Serializable
     {
         int x;
         int y;
@@ -51,13 +51,13 @@ namespace pg
         {
         }
         
-        std::istream &Deserialize(std::istream &stream)
+        pg::InputStream &Deserialize(pg::InputStream &stream)
         {
             stream >> x >> y;
             return stream;
         }
         
-        std::ostream &Serialize(std::ostream &stream) const
+        pg::OutputStream &Serialize(pg::OutputStream &stream) const
         {
             stream << x << y;
             return stream;
@@ -89,7 +89,7 @@ namespace pg
     };
 
     template<typename T, typename P>
-    class VoronoiTile : public Serializable
+    class VoronoiTile : public pg::Serializable
     {
         public:
             VoronoiTile() = default;
@@ -127,7 +127,7 @@ namespace pg
                 return sites[index];
             }
             
-            std::istream &Deserialize(std::istream &stream)
+            pg::InputStream &Deserialize(pg::InputStream &stream)
             {
                 size_t size;
                 stream >> size;
@@ -138,7 +138,7 @@ namespace pg
                 return stream;
             }
             
-            std::ostream &Serialize(std::ostream &stream) const
+            pg::OutputStream &Serialize(pg::OutputStream &stream) const
             {
                 stream << sites.size();
                 for(auto site : sites)
@@ -151,9 +151,14 @@ namespace pg
     };
 
     template<typename T, typename P>
-    class VoronoiMesh : public Serializable
+    class VoronoiMesh : public pg::Serializable
     {
         public:
+            VoronoiMesh(PropertyGenerator<T, P> &pgenerator):
+                propertyGenerator(pgenerator)
+            {
+            }
+
             VoronoiMesh(PropertyGenerator<T, P> &pgenerator,
                         size_t tDensityX, size_t tDensityY, T uX, T uY):
                 propertyGenerator(pgenerator),
@@ -257,7 +262,7 @@ namespace pg
                 return *candidates[0].site;
             }
         
-            std::istream &Deserialize(std::istream &stream)
+            pg::InputStream &Deserialize(pg::InputStream &stream)
             {
                 size_t size;
                 stream >> tileDensityX >> tileDensityY >> unitX >> unitY
@@ -275,7 +280,7 @@ namespace pg
                 return stream;
             }
             
-            std::ostream &Serialize(std::ostream &stream) const
+            pg::OutputStream &Serialize(pg::OutputStream &stream) const
             {
                 stream << tileDensityX << tileDensityY << unitX << unitY
                        << tiles.size();
