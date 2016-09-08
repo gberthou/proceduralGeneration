@@ -16,7 +16,7 @@ OBJS=$(patsubst ../%.cpp,../obj/%.o,$(CPPFILES))
 %.o : %.cpp
 	$(GPP) $(CFLAGS) $(INCDIR) -c $< -o $@ $(DEFINES)
 
-examples: names perlin mapVoronoi
+examples: names perlin mapVoronoi voronoiSave
 	echo Done
 
 names: names.o $(OBJS)
@@ -26,6 +26,9 @@ perlin: perlin.o $(OBJS)
 	$(GPP) $^ -o $@ $(LIBDIR) $(LIBS)
 
 mapVoronoi: mapVoronoi.o $(OBJS)
+	$(GPP) $^ -o $@ $(LIBDIR) $(LIBS)
+
+voronoiSave: voronoiSave.o $(OBJS)
 	$(GPP) $^ -o $@ $(LIBDIR) $(LIBS)
 
 clean:

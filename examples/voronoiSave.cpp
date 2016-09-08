@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <cstdlib>
 #include <vector>
@@ -97,18 +98,40 @@ void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
     texture.draw(sprite);
 }
 
-void TestVoronoi(pg::StdNumberGenerator &rngenerator)
+void TestVoronoi(pg::StdNumberGenerator &rngenerator, bool in)
 {
+    const std::string DATA_FILENAME = "map.bin";
+
     const unsigned int WIDTH = 640;
     const unsigned int HEIGHT = 640;
 
     ColorGenerator colorGenerator;
-    pg::VoronoiMesh<float, Color> map(colorGenerator, 8, 8, 240, 240);
+    pg::VoronoiMesh<float, Color> *map;
+    
+    if(in)
+    {
+        map = new pg::VoronoiMesh<float, Color>(colorGenerator);
+        
+        std::ifstream s(DATA_FILENAME.c_str(),
+                        std::ios_base::in | std::ios_base::binary);
+        pg::InputStream stream(s);
+        stream >> *map;
+    }
+    else
+        map = new pg::VoronoiMesh<float, Color>(colorGenerator, 8, 8, 240, 240);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
    
-    drawMesh(rngenerator, texture, map, WIDTH, HEIGHT);
+    drawMesh(rngenerator, texture, *map, WIDTH, HEIGHT);
+
+    if(!in)
+    {
+        std::ofstream s(DATA_FILENAME.c_str(),
+                        std::ios_base::out | std::ios_base::binary);
+        pg::OutputStream stream(s);
+        stream << *map;
+    }
 
     sf::Sprite sprite;
     sprite.setTexture(texture.getTexture());
@@ -129,13 +152,24 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
         window.draw(sprite);
         window.display();
     }
+
+    delete map;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    const std::string S_IN  = "in";
+    const std::string S_OUT = "out";
     pg::StdNumberGenerator rngenerator;
 
-    TestVoronoi(rngenerator);
+    if(argc < 2
+    || (std::string(argv[1]) != S_IN && std::string(argv[1]) != S_OUT))
+    {
+        std::cout << "Usage: ./a.out [in|out]" << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    TestVoronoi(rngenerator, std::string(argv[1]) == S_IN);
 
     return EXIT_SUCCESS;
 }
