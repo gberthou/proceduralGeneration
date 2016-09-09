@@ -11,65 +11,65 @@
 #include "random/Distribution.hpp"
 #include "algorithm/VoronoiMesh.hpp"
 #include "core/Map.hpp"
+#include "noise/PerlinNoise.hpp"
 
-struct Color : public pg::Serializable
+struct TileType : public pg::Serializable
 {
     public:
-        Color():
-            r(0),
-            g(0),
-            b(0)
+        TileType():
+            island(false)
         {
         }
 
-        Color(sf::Uint8 red, sf::Uint8 green, sf::Uint8 blue):
-            r(red),
-            g(green),
-            b(blue)
+        TileType(bool i):
+            island(i)
         {
         }
 
         pg::InputStream &Deserialize(pg::InputStream &stream)
         {
-            stream >> r >> g >> b;
+            stream >> island;
             return stream;
         }
         
         pg::OutputStream &Serialize(pg::OutputStream &stream) const
         {
-            stream << r << g << b;
+            stream << island;
             return stream;
         }
 
-        sf::Uint8 r;
-        sf::Uint8 g;
-        sf::Uint8 b;
+        bool island;
 };
 
-class ColorGenerator : public pg::PropertyGenerator<float, Color>
+class IslandGenerator : public pg::PropertyGenerator<float, TileType>
 {
     public:
-        ColorGenerator():
-            distribution(pg::CreateDistributionUniformUint(0x00, 0xff))
+        IslandGenerator(float uX, float uY):
+            noise(rngenerator, {NOISE_DENSITY, NOISE_DENSITY}),
+            unitX(uX),
+            unitY(uY)
         {
         }
-        virtual ~ColorGenerator() = default;
+        virtual ~IslandGenerator() = default;
 
-        virtual Color operator()(const pg::VPoint<float> &)
+        virtual TileType operator()(const pg::VPoint<float> & point)
         {
-            sf::Uint8 colors[3];
-            for(size_t i = 0; i < 3; ++i)
-                colors[i] = distribution(rngenerator);
-            return Color(colors[0], colors[1], colors[2]);
+            float x = point.x * NOISE_DENSITY / unitX;
+            float y = point.y * NOISE_DENSITY / unitY;
+            return noise({x, y}) > .65f;
         }
 
     protected:
+        static const size_t NOISE_DENSITY = 8;
+
         pg::StdNumberGenerator rngenerator;
-        pg::DistributionUniformUint distribution;
+        pg::PerlinNoiseUniformFloat<2> noise;
+        float unitX;
+        float unitY;
 };
     
 void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
-              pg::VoronoiMesh<float, Color> &mesh,
+              pg::VoronoiMesh<float, TileType> &mesh,
               size_t width, size_t height)
 {
     sf::Uint8 *pixels = new sf::Uint8[width*height*4];
@@ -80,11 +80,21 @@ void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
             vpoint.x = x;
             vpoint.y = y;
 
-            Color color = mesh.SiteAt(rngenerator, vpoint).properties;
+            TileType isIsland = mesh.SiteAt(rngenerator, vpoint).properties;
             size_t i = (x+y*width)*4;
-            pixels[i  ] = color.r;
-            pixels[i+1] = color.g;
-            pixels[i+2] = color.b;
+
+            if(isIsland.island)
+            {
+                pixels[i  ] = 192;
+                pixels[i+1] = 192;
+                pixels[i+2] = 64;
+            }
+            else
+            {
+                pixels[i  ] = 64;
+                pixels[i+1] = 64;
+                pixels[i+2] = 255;
+            }
             pixels[i+3] = 0xff;
         }
     
@@ -98,40 +108,20 @@ void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
     texture.draw(sprite);
 }
 
-void TestVoronoi(pg::StdNumberGenerator &rngenerator, bool in)
+void TestVoronoi(pg::StdNumberGenerator &rngenerator)
 {
     const std::string DATA_FILENAME = "map.bin";
 
     const unsigned int WIDTH = 640;
     const unsigned int HEIGHT = 640;
 
-    ColorGenerator colorGenerator;
-    pg::VoronoiMesh<float, Color> *map;
+    IslandGenerator islandGenerator(WIDTH, HEIGHT);
+    pg::VoronoiMesh<float, TileType> map(islandGenerator, 8, 8, 120, 120);
     
-    if(in)
-    {
-        map = new pg::VoronoiMesh<float, Color>(colorGenerator);
-        
-        std::ifstream s(DATA_FILENAME.c_str(),
-                        std::ios_base::in | std::ios_base::binary);
-        pg::InputStream stream(s);
-        stream >> *map;
-    }
-    else
-        map = new pg::VoronoiMesh<float, Color>(colorGenerator, 8, 8, 240, 240);
-
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
    
-    drawMesh(rngenerator, texture, *map, WIDTH, HEIGHT);
-
-    if(!in)
-    {
-        std::ofstream s(DATA_FILENAME.c_str(),
-                        std::ios_base::out | std::ios_base::binary);
-        pg::OutputStream stream(s);
-        stream << *map;
-    }
+    drawMesh(rngenerator, texture, map, WIDTH, HEIGHT);
 
     sf::Sprite sprite;
     sprite.setTexture(texture.getTexture());
@@ -152,24 +142,13 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator, bool in)
         window.draw(sprite);
         window.display();
     }
-
-    delete map;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
-    const std::string S_IN  = "in";
-    const std::string S_OUT = "out";
     pg::StdNumberGenerator rngenerator;
 
-    if(argc < 2
-    || (std::string(argv[1]) != S_IN && std::string(argv[1]) != S_OUT))
-    {
-        std::cout << "Usage: ./a.out [in|out]" << std::endl;
-        return EXIT_SUCCESS;
-    }
-
-    TestVoronoi(rngenerator, std::string(argv[1]) == S_IN);
+    TestVoronoi(rngenerator);
 
     return EXIT_SUCCESS;
 }

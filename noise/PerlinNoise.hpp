@@ -167,7 +167,7 @@ namespace pg
                 return lerp(leftResult, rightResult, factor);
             }
     };
-            
+
     template <size_t DIM>
     class PerlinNoiseUniformFloat :
         public PerlinNoise<float, std::uniform_real_distribution, DIM>
