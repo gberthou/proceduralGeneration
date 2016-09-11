@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../random/NumberGenerator.hpp"
+#include "../random/Distribution.hpp"
 
 namespace pg
 {

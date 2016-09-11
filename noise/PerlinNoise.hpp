@@ -50,7 +50,7 @@ namespace pg
                 return ret;
             }
 
-            /* Generates a scalarin range [0, 1] */
+            /* Generates a scalar in range [0, 1] */
             inline T generateScalar()
             {
                 return (engine() - engine.min()) / (engine.max() - engine.min());

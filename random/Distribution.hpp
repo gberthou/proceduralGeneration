@@ -1,6 +1,8 @@
 #ifndef DISTRIBUTION_HPP
 #define DISTRIBUTION_HPP
 
+#include <random>
+
 namespace pg
 {
     template<typename result_type, template<typename> class Dist>
@@ -40,18 +42,10 @@ namespace pg
         Distribution<float, std::uniform_real_distribution>;
 
     DistributionUniformUint
-        CreateDistributionUniformUint(unsigned int min, unsigned int max)
-    {
-        std::uniform_int_distribution<unsigned int> dist(min, max);
-        return DistributionUniformUint(dist);
-    }
+        CreateDistributionUniformUint(unsigned int min, unsigned int max);
     
     DistributionUniformFloat
-        CreateDistributionUniformFloat(float min, float max)
-    {
-        std::uniform_real_distribution<float> dist(min, max);
-        return DistributionUniformFloat(dist);
-    }
+        CreateDistributionUniformFloat(float min, float max);
 }
 
 
