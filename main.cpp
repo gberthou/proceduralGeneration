@@ -14,8 +14,14 @@
 #include "noise/PerlinNoise.hpp"
 
 #include "TileType.h"
-#include "MeshSprite.h"
+#include "MeshSpriteGroup.h"
 #include "IslandGenerator.h"
+
+struct Direction
+{
+    sf::Keyboard::Key keycode;
+    bool enabled;
+};
 
 int main()
 {
@@ -27,11 +33,21 @@ int main()
     IslandGenerator islandGenerator(WIDTH, HEIGHT);
     pg::VoronoiMesh<float, TileType> map(islandGenerator, 8, 8, 120, 120);
 
-    MeshSprite meshSprite(rngenerator, map, WIDTH, HEIGHT);
+    MeshSpriteGroup meshSpriteGroup(rngenerator, map, WIDTH, HEIGHT);
     
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Voronoi");
     window.setFramerateLimit(60);
-    
+
+    float x = 0;
+    float y = 0;
+    const float MOVE_VELOCITY = 4;
+
+    const size_t DIRECTION_COUNT = 4;
+    Direction directions[DIRECTION_COUNT] = {{sf::Keyboard::Left, false},
+                                             {sf::Keyboard::Right, false},
+                                             {sf::Keyboard::Up, false},
+                                             {sf::Keyboard::Down, false}};
+
     while(window.isOpen())
     {
         sf::Event event;
@@ -39,10 +55,40 @@ int main()
         {
             if(event.type == sf::Event::Closed)
                 window.close();
+            else if(event.type == sf::Event::KeyPressed)
+            {
+                for(size_t i = 0; i < DIRECTION_COUNT; ++i)
+                    if(event.key.code == directions[i].keycode)
+                    {
+                        directions[i].enabled = true;
+                        break;
+                    }
+            }
+            else if(event.type == sf::Event::KeyReleased)
+            {
+                for(size_t i = 0; i < DIRECTION_COUNT; ++i)
+                    if(event.key.code == directions[i].keycode)
+                    {
+                        directions[i].enabled = false;
+                        break;
+                    }
+            }
         }
-        
+
+        if(directions[0].enabled)
+            x -= MOVE_VELOCITY;
+        else if(directions[1].enabled)
+            x += MOVE_VELOCITY;
+        if(directions[2].enabled)
+            y -= MOVE_VELOCITY;
+        else if(directions[3].enabled)
+            y += MOVE_VELOCITY;
+
+        meshSpriteGroup.setPosition(x, y);
+        meshSpriteGroup.Refresh();
+
         window.clear();
-        window.draw(meshSprite);
+        window.draw(meshSpriteGroup);
         window.display();
     }
 
