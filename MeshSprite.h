@@ -3,7 +3,6 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "random/NumberGenerator.hpp"
 #include "algorithm/VoronoiMesh.hpp"
 
 #include "TileType.h"
@@ -11,8 +10,7 @@
 class MeshSprite : public sf::Sprite
 {
     public:
-        MeshSprite(pg::NumberGenerator &generator,
-                   pg::VoronoiMesh<float, TileType> &mesh,
+        MeshSprite(pg::VoronoiMesh<float, TileType> &mesh,
                    size_t texWidth, size_t texHeight);
         virtual ~MeshSprite() = default;
 

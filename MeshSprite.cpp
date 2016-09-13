@@ -2,7 +2,7 @@
 
 #include "MeshSprite.h"
 
-MeshSprite::MeshSprite(pg::NumberGenerator &generator,
+MeshSprite::MeshSprite(
                        pg::VoronoiMesh<float, TileType> &mesh,
                        size_t texWidth, size_t texHeight)
 {
@@ -17,7 +17,7 @@ MeshSprite::MeshSprite(pg::NumberGenerator &generator,
             vpoint.x = x;
             vpoint.y = y;
 
-            TileType isIsland = mesh.SiteAt(generator, vpoint).properties;
+            TileType isIsland = mesh.SiteAt(vpoint).properties;
             size_t i = (x + y * texWidth) * 4;
 
             if(isIsland.island)

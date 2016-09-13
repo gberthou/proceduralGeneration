@@ -56,7 +56,7 @@ namespace pg
                 return (engine() - engine.min()) / (engine.max() - engine.min());
             }
 
-            virtual Tuple generateVector()
+            Tuple generateVector()
             {
                 Tuple ret;
                 T sum2 = 0;

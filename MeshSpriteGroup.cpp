@@ -1,7 +1,6 @@
 #include "MeshSpriteGroup.h"
 
-MeshSpriteGroup::MeshSpriteGroup(pg::NumberGenerator &generator,
-                                 pg::VoronoiMesh<float, TileType> &mesh,
+MeshSpriteGroup::MeshSpriteGroup(pg::VoronoiMesh<float, TileType> &mesh,
                                  size_t tWidth, size_t tHeight):
     texWidth(tWidth),
     texHeight(tHeight),
@@ -10,8 +9,7 @@ MeshSpriteGroup::MeshSpriteGroup(pg::NumberGenerator &generator,
     for(size_t y = 0; y < SPRITE_DIM; ++y)
         for(size_t x = 0; x < SPRITE_DIM; ++x)
         {
-            MeshSprite *sprite = new MeshSprite(generator, mesh, texWidth,
-                                                texHeight);
+            MeshSprite *sprite = new MeshSprite(mesh, texWidth, texHeight);
             if(!sprite)
                 throw new std::runtime_error("Cannot allocate sprite");
             sprite->setPosition(x * texWidth, y * texHeight);

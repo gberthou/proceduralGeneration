@@ -31,9 +31,10 @@ int main()
     const unsigned int HEIGHT = 640;
 
     IslandGenerator islandGenerator(WIDTH, HEIGHT);
-    pg::VoronoiMesh<float, TileType> map(islandGenerator, 8, 8, 120, 120);
+    pg::VoronoiMesh<float, TileType> map(rngenerator,
+                                         islandGenerator, 8, 8, 120, 120);
 
-    MeshSpriteGroup meshSpriteGroup(rngenerator, map, WIDTH, HEIGHT);
+    MeshSpriteGroup meshSpriteGroup(map, WIDTH, HEIGHT);
     
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Voronoi");
     window.setFramerateLimit(60);

@@ -9,6 +9,7 @@
 
 #include "VoronoiUtils.hpp"
 #include "../noise/Noise.hpp"
+#include "../core/Incrementable.hpp"
 
 namespace pg
 {
@@ -38,21 +39,26 @@ namespace pg
     };
 
     template<typename T, typename P>
-    class VoronoiMesh : public pg::Serializable
+    class VoronoiMesh : public pg::Serializable,
+                        public pg::Incrementable<pg::VoronoiTile<T, P>>
     {
         public:
-            VoronoiMesh(PropertyGenerator<T, P> &pgenerator,
+            VoronoiMesh(pg::NumberGenerator &ngenerator,
+                        PropertyGenerator<T, P> &pgenerator,
                         const DistanceModifier<T> &dModifier
                             = DistanceModifier<T>::defaultDistanceModifier):
+                pg::Incrementable<pg::VoronoiTile<T, P>>(ngenerator),
                 propertyGenerator(pgenerator),
                 distanceModifier(dModifier)
             {
             }
 
-            VoronoiMesh(PropertyGenerator<T, P> &pgenerator,
+            VoronoiMesh(pg::NumberGenerator &ngenerator,
+                        PropertyGenerator<T, P> &pgenerator,
                         size_t tDensityX, size_t tDensityY, T uX, T uY,
                         const DistanceModifier<T> &dModifier
                             = DistanceModifier<T>::defaultDistanceModifier):
+                pg::Incrementable<pg::VoronoiTile<T, P>>(ngenerator),
                 propertyGenerator(pgenerator),
                 tileDensityX(tDensityX),
                 tileDensityY(tDensityY),
@@ -64,33 +70,8 @@ namespace pg
 
             virtual ~VoronoiMesh() = default;
 
-            VoronoiTile<T, P> &TileAt(pg::NumberGenerator &rngenerator, int x,
-                                      int y)
-            {
-                auto it = tiles.find({x, y});
-                if(it != tiles.end())
-                    return it->second;
-
-                // Does not exist yet
-                std::vector<pg::MapPoint<T>> points;
-                pg::CreateRandomizedGrid(rngenerator, points, x*unitX,
-                                         (x+1)*unitX, y*unitY, (y+1)*unitY,
-                                         tileDensityX, tileDensityY);
-                std::vector<VoronoiSite<T, P>> sites(points.size());
-                for(size_t i = 0; i < sites.size(); ++i)
-                {
-                    sites[i].point = points[i];
-                    sites[i].properties = propertyGenerator(points[i]);
-                }
-
-                auto itInsert = tiles.insert({{x, y}, VoronoiTile<T, P>(sites,
-                                                              distanceModifier)});
-                if(!itInsert.second){} // TODO
-                return itInsert.first->second;
-            }
             
-            VoronoiSite<T, P> &SiteAt(pg::NumberGenerator &rngenerator,
-                                      const VPoint<T> &point)
+            VoronoiSite<T, P> &SiteAt(const VPoint<T> &point)
             {
                 struct Candidate
                 {
@@ -105,7 +86,7 @@ namespace pg
 
                 int tileX = std::floor(point.x / unitX);
                 int tileY = std::floor(point.y / unitY);
-                VoronoiTile<T, P> &tile = TileAt(rngenerator, tileX, tileY);
+                VoronoiTile<T, P> &tile = this->At(tileX, tileY);
 
                 size_t subtileIndex;
                 float distance;
@@ -121,23 +102,23 @@ namespace pg
                 if(subtileX == 0) // Left border
                 {
                     // Lookup tile on the left
-                    borderTiles.push_back(&TileAt(rngenerator, tileX-1, tileY));
+                    borderTiles.push_back(&this->At(tileX-1, tileY));
                 }
                 else if(subtileX + 1 == tileDensityX) // Right border
                 {
                     // Lookup tile on the right
-                    borderTiles.push_back(&TileAt(rngenerator, tileX+1, tileY));
+                    borderTiles.push_back(&this->At(tileX+1, tileY));
                 }
 
                 if(subtileY == 0) // Upper border
                 {
                     // Lookup tile on the top
-                    borderTiles.push_back(&TileAt(rngenerator, tileX, tileY-1));
+                    borderTiles.push_back(&this->At(tileX, tileY-1));
                 }
                 else if(subtileY + 1 == tileDensityY) // Lower border
                 {
                     // Lookup tile on the bottom
-                    borderTiles.push_back(&TileAt(rngenerator, tileX, tileY+1));
+                    borderTiles.push_back(&this->At(tileX, tileY+1));
                 }
 
                 for(auto borderTile : borderTiles)
@@ -162,14 +143,14 @@ namespace pg
                 stream >> tileDensityX >> tileDensityY >> unitX >> unitY
                        >> size;
 
-                tiles.clear();
+                this->tiles.clear();
                 for(size_t i = 0; i < size; ++i)
                 {
-                    VoronoiTileCoord key;
+                    pg::TileCoord key;
                     VoronoiTile<T, P> value(distanceModifier);
 
                     stream >> key >> value;
-                    tiles.insert({key, value});
+                    this->tiles.insert({key, value});
                 }
                 return stream;
             }
@@ -177,21 +158,39 @@ namespace pg
             pg::OutputStream &Serialize(pg::OutputStream &stream) const
             {
                 stream << tileDensityX << tileDensityY << unitX << unitY
-                       << tiles.size();
+                       << this->tiles.size();
                 
-                for(auto tile : tiles)
+                for(auto tile : this->tiles)
                     stream << tile.first << tile.second;
                 return stream;
             }
 
         protected:
+            VoronoiTile<T, P> &increment(int x, int y)
+            {
+                std::vector<pg::MapPoint<T>> points;
+                pg::CreateRandomizedGrid(this->rngenerator, points, x*unitX,
+                                         (x+1)*unitX, y*unitY, (y+1)*unitY,
+                                         tileDensityX, tileDensityY);
+                std::vector<VoronoiSite<T, P>> sites(points.size());
+                for(size_t i = 0; i < sites.size(); ++i)
+                {
+                    sites[i].point = points[i];
+                    sites[i].properties = propertyGenerator(points[i]);
+                }
+
+                auto itInsert = this->tiles.insert({{x, y}, VoronoiTile<T, P>(sites,
+                                                            distanceModifier)});
+                if(!itInsert.second){} // TODO
+                return itInsert.first->second;
+            }
+
             PropertyGenerator<T, P> &propertyGenerator;
             size_t tileDensityX;
             size_t tileDensityY;
             T unitX;
             T unitY;
             const DistanceModifier<T> &distanceModifier;
-            std::map<VoronoiTileCoord, VoronoiTile<T, P>> tiles;
     };
     
     template<typename T, typename P>

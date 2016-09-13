@@ -10,8 +10,7 @@
 class MeshSpriteGroup : public sf::Drawable, public sf::Transformable
 {
     public:
-        MeshSpriteGroup(pg::NumberGenerator &generator,
-                        pg::VoronoiMesh<float, TileType> &mesh,
+        MeshSpriteGroup(pg::VoronoiMesh<float, TileType> &mesh,
                         size_t texWidth, size_t texHeight);
         virtual ~MeshSpriteGroup();
 
