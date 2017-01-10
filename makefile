@@ -12,6 +12,7 @@ DEFINES=
 LIBS=-lsfml-system -lsfml-window -lsfml-graphics
 
 CPPFILES=$(wildcard *.cpp) $(wildcard random/*.cpp) $(wildcard core/*.cpp)
+HPPFILES=$(wildcard *.hpp) $(wildcard random/*.hpp) $(wildcard core/*.hpp)
 
 OBJS=$(patsubst %.cpp,$(OBJDIR)/%.o,$(CPPFILES))
 
@@ -21,7 +22,7 @@ $(OBJDIR)/%.o : %.cpp
 .PHONY: clean
 .PHONY: examples
 
-default: $(OBJS)
+default: $(OBJS) $(HPPFILES)
 	$(GPP) $(OBJS) -o $(BIN) $(LIBDIR) $(LIBS)
 
 examples:

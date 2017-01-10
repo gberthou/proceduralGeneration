@@ -4,46 +4,52 @@
 #include <map>
 
 #include "../random/NumberGenerator.hpp"
+#include "Serializable.hpp"
 
 namespace pg
 {
+    template<size_t DIM>
     struct TileCoord
     {
-        int x;
-        int y;
+        std::array<int, DIM> coord;
 
-        TileCoord():
-            x(0),
-            y(0)
+        TileCoord()
         {
         }
 
-        TileCoord(int a, int b):
-            x(a),
-            y(b)
+        TileCoord(const std::array<int, DIM> &coord):
+            coord(coord)
         {
         }
         
         pg::InputStream &Deserialize(pg::InputStream &stream)
         {
-            stream >> x >> y;
+            for(auto c : coord)
+                stream >> c;
             return stream;
         }
         
         pg::OutputStream &Serialize(pg::OutputStream &stream) const
         {
-            stream << x << y;
+            for(size_t i = 0; i < DIM; ++i)
+                stream << coord[i];
             return stream;
         }
     
-        bool operator<(const TileCoord &b) const
+        bool operator<(const TileCoord<DIM> &b) const
         {
-            return x < b.x
-                || (x == b.x && y < b.y);
+            for(size_t i = 0; i < DIM; ++i)
+            {
+                if(coord[i] < b.coord[i])
+                    return true;
+                else if(coord[i] > b.coord[i])
+                    return false;
+            }
+            return false;
         }
     };
 
-    template<typename T>
+    template<typename T, size_t DIM>
     class Incrementable
     {
         public:
@@ -54,20 +60,31 @@ namespace pg
 
             virtual ~Incrementable() = default;
 
-            T &At(int x, int y)
+            T &At(const std::array<int, DIM> &coord)
             {
-                auto it = tiles.find({x, y});
+                auto it = tiles.find(coord);
                 if(it != tiles.end())
                     return it->second;
 
                 // Does not exist yet
-                return increment(x, y);
+                return increment(coord);
+            }
+            
+            bool HasTile(const std::array<int, DIM> &coord, const T *&tile) const
+            {
+                auto it = this->tiles.find(coord);
+                if(it != this->tiles.end())
+                {
+                    tile = &it->second;
+                    return true;
+                }
+                return false;
             }
 
         protected:
-            virtual T &increment(int x, int y) = 0;
+            virtual T &increment(const std::array<int, DIM> &coord) = 0;
 
-            std::map<TileCoord, T> tiles;
+            std::map<TileCoord<DIM>, T> tiles;
             pg::NumberGenerator &rngenerator;
     };
 }

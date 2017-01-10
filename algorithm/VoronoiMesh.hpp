@@ -8,63 +8,31 @@
 #include <algorithm>
 
 #include "VoronoiUtils.hpp"
-#include "../noise/Noise.hpp"
 #include "../core/Incrementable.hpp"
 
 namespace pg
 {
-    template<typename T>
-    class DistanceModifierNoise : public DistanceModifier<T>
-    {
-        public:
-            DistanceModifierNoise(const pg::Noise<T, 2> &n):
-                noise(n)
-            {
-            }
-
-            virtual ~DistanceModifierNoise() = default;
-            
-            virtual T operator()(const VPoint<T> &point,
-                                 const VPoint<T> &sitePoint) const
-            {
-                // Dot product: (point-sitePoint).(1, 0)
-                float dot = point.x - sitePoint.x;
-                
-                T noiseFactor = 2 * noise({point.x/640, point.y/640}) - 1;
-                return dot * dot * noiseFactor;
-            }
-
-        protected:
-            const pg::Noise<T, 2> &noise;
-    };
-
     template<typename T, typename P>
     class VoronoiMesh : public pg::Serializable,
-                        public pg::Incrementable<pg::VoronoiTile<T, P>>
+                        public pg::Incrementable<pg::VoronoiTile<T, P>, 2>
     {
         public:
             VoronoiMesh(pg::NumberGenerator &ngenerator,
-                        PropertyGenerator<T, P> &pgenerator,
-                        const DistanceModifier<T> &dModifier
-                            = DistanceModifier<T>::defaultDistanceModifier):
-                pg::Incrementable<pg::VoronoiTile<T, P>>(ngenerator),
-                propertyGenerator(pgenerator),
-                distanceModifier(dModifier)
+                        PropertyGenerator<T, P> &pgenerator):
+                pg::Incrementable<pg::VoronoiTile<T, P>, 2>(ngenerator),
+                propertyGenerator(pgenerator)
             {
             }
 
             VoronoiMesh(pg::NumberGenerator &ngenerator,
                         PropertyGenerator<T, P> &pgenerator,
-                        size_t tDensityX, size_t tDensityY, T uX, T uY,
-                        const DistanceModifier<T> &dModifier
-                            = DistanceModifier<T>::defaultDistanceModifier):
-                pg::Incrementable<pg::VoronoiTile<T, P>>(ngenerator),
+                        size_t tDensityX, size_t tDensityY, T uX, T uY):
+                pg::Incrementable<pg::VoronoiTile<T, P>, 2>(ngenerator),
                 propertyGenerator(pgenerator),
                 tileDensityX(tDensityX),
                 tileDensityY(tDensityY),
                 unitX(uX),
-                unitY(uY),
-                distanceModifier(dModifier)
+                unitY(uY)
             {
             }
 
@@ -86,7 +54,7 @@ namespace pg
 
                 int tileX = std::floor(point.x / unitX);
                 int tileY = std::floor(point.y / unitY);
-                VoronoiTile<T, P> &tile = this->At(tileX, tileY);
+                VoronoiTile<T, P> &tile = this->At({tileX, tileY});
 
                 size_t subtileIndex;
                 float distance;
@@ -102,23 +70,23 @@ namespace pg
                 if(subtileX == 0) // Left border
                 {
                     // Lookup tile on the left
-                    borderTiles.push_back(&this->At(tileX-1, tileY));
+                    borderTiles.push_back(&this->At({tileX-1, tileY}));
                 }
                 else if(subtileX + 1 == tileDensityX) // Right border
                 {
                     // Lookup tile on the right
-                    borderTiles.push_back(&this->At(tileX+1, tileY));
+                    borderTiles.push_back(&this->At({tileX+1, tileY}));
                 }
 
                 if(subtileY == 0) // Upper border
                 {
                     // Lookup tile on the top
-                    borderTiles.push_back(&this->At(tileX, tileY-1));
+                    borderTiles.push_back(&this->At({tileX, tileY-1}));
                 }
                 else if(subtileY + 1 == tileDensityY) // Lower border
                 {
                     // Lookup tile on the bottom
-                    borderTiles.push_back(&this->At(tileX, tileY+1));
+                    borderTiles.push_back(&this->At({tileX, tileY+1}));
                 }
 
                 for(auto borderTile : borderTiles)
@@ -146,8 +114,8 @@ namespace pg
                 this->tiles.clear();
                 for(size_t i = 0; i < size; ++i)
                 {
-                    pg::TileCoord key;
-                    VoronoiTile<T, P> value(distanceModifier);
+                    pg::TileCoord<2> key;
+                    VoronoiTile<T, P> value;
 
                     stream >> key >> value;
                     this->tiles.insert({key, value});
@@ -166,8 +134,11 @@ namespace pg
             }
 
         protected:
-            VoronoiTile<T, P> &increment(int x, int y)
+            VoronoiTile<T, P> &increment(const std::array<int, 2> &coord)
             {
+                int x = coord[0];
+                int y = coord[1];
+
                 std::vector<pg::MapPoint<T>> points;
                 pg::CreateRandomizedGrid(this->rngenerator, points, x*unitX,
                                          (x+1)*unitX, y*unitY, (y+1)*unitY,
@@ -179,8 +150,7 @@ namespace pg
                     sites[i].properties = propertyGenerator(points[i]);
                 }
 
-                auto itInsert = this->tiles.insert({{x, y}, VoronoiTile<T, P>(sites,
-                                                            distanceModifier)});
+                auto itInsert = this->tiles.insert({coord, VoronoiTile<T, P>(sites)});
                 if(!itInsert.second){} // TODO
                 return itInsert.first->second;
             }
@@ -190,34 +160,6 @@ namespace pg
             size_t tileDensityY;
             T unitX;
             T unitY;
-            const DistanceModifier<T> &distanceModifier;
-    };
-    
-    template<typename T, typename P>
-    class VoronoiMeshNoise : public VoronoiMesh<T, P>
-    {
-        public:
-            VoronoiMeshNoise(PropertyGenerator<T, P> &pgenerator,
-                             const pg::Noise<T, 2> &n):
-                VoronoiMesh<T, P>(pgenerator, dModifier),
-                dModifier(n),
-                noise(n)
-            {
-            }
-
-            VoronoiMeshNoise(PropertyGenerator<T, P> &pgenerator,
-                             size_t tDensityX, size_t tDensityY, T uX, T uY,
-                             const pg::Noise<T, 2> &n):
-                VoronoiMesh<T, P>(pgenerator, tDensityX, tDensityY, uX, uY,
-                                  dModifier),
-                dModifier(n),
-                noise(n)
-            {
-            }
-
-        protected:
-            DistanceModifierNoise<T> dModifier;
-            const pg::Noise<T, 2> &noise;
     };
 }
 

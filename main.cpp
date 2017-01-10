@@ -11,7 +11,8 @@
 #include "random/Distribution.hpp"
 #include "algorithm/VoronoiMesh.hpp"
 #include "core/Map.hpp"
-#include "noise/PerlinNoise.hpp"
+//#include "noise/PerlinNoise.hpp"
+#include "noise/PerlinNoise2.hpp"
 
 #include "TileType.h"
 #include "MeshSpriteGroup.h"

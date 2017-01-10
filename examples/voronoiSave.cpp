@@ -68,8 +68,7 @@ class ColorGenerator : public pg::PropertyGenerator<float, Color>
         pg::DistributionUniformUint distribution;
 };
     
-void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
-              pg::VoronoiMesh<float, Color> &mesh,
+void drawMesh(sf::RenderTexture &texture, pg::VoronoiMesh<float, Color> &mesh,
               size_t width, size_t height)
 {
     sf::Uint8 *pixels = new sf::Uint8[width*height*4];
@@ -80,7 +79,7 @@ void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
             vpoint.x = x;
             vpoint.y = y;
 
-            Color color = mesh.SiteAt(rngenerator, vpoint).properties;
+            Color color = mesh.SiteAt(vpoint).properties;
             size_t i = (x+y*width)*4;
             pixels[i  ] = color.r;
             pixels[i+1] = color.g;
@@ -110,7 +109,7 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator, bool in)
     
     if(in)
     {
-        map = new pg::VoronoiMesh<float, Color>(colorGenerator);
+        map = new pg::VoronoiMesh<float, Color>(rngenerator, colorGenerator);
         
         std::ifstream s(DATA_FILENAME.c_str(),
                         std::ios_base::in | std::ios_base::binary);
@@ -118,12 +117,13 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator, bool in)
         stream >> *map;
     }
     else
-        map = new pg::VoronoiMesh<float, Color>(colorGenerator, 8, 8, 240, 240);
+        map = new pg::VoronoiMesh<float, Color>(rngenerator, colorGenerator, 8,
+                                                8, 240, 240);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
    
-    drawMesh(rngenerator, texture, *map, WIDTH, HEIGHT);
+    drawMesh(texture, *map, WIDTH, HEIGHT);
 
     if(!in)
     {

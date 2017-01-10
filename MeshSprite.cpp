@@ -2,8 +2,7 @@
 
 #include "MeshSprite.h"
 
-MeshSprite::MeshSprite(
-                       pg::VoronoiMesh<float, TileType> &mesh,
+MeshSprite::MeshSprite(pg::VoronoiMesh<float, TileType> &mesh,
                        size_t texWidth, size_t texHeight)
 {
     sf::Uint8 *pixels = new sf::Uint8[texWidth * texHeight * 4];
@@ -32,6 +31,7 @@ MeshSprite::MeshSprite(
                 pixels[i+1] = 64;
                 pixels[i+2] = 255;
             }
+
             pixels[i+3] = 0xff;
         }
     

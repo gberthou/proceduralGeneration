@@ -7,24 +7,22 @@
 #include <SFML/Graphics.hpp>
 
 #include "../random/StdNumberGenerator.hpp"
-#include "../noise/PerlinNoise.hpp"
+#include "../noise/PerlinNoise2.hpp"
     
 const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 640;
-const size_t NOISE_DIM_X = 16;
-const size_t NOISE_DIM_Y = 16;
-const size_t NOISE_DIM_Z = 4;
+const size_t NOISE_DETAIL = 8;
 
-void refreshImage(sf::Image &image,const pg::PerlinNoiseUniformFloat<3> &noise,
+void refreshImage(sf::Image &image, pg::PerlinNoiseUniformFloat<3> &noise,
                   float z)
 {
     for(unsigned int y = 0; y < HEIGHT; ++y)
     {
-        float fy = y * NOISE_DIM_Y / static_cast<float>(HEIGHT);
+        float fy = y / static_cast<float>(HEIGHT);
 
         for(unsigned int x = 0; x < WIDTH; ++x)
         {
-            float fx = x * NOISE_DIM_X / static_cast<float>(WIDTH);
+            float fx = x / static_cast<float>(WIDTH);
             sf::Uint8 value = noise({fx, fy, z}) * 255.f;
 
             image.setPixel(x, y, sf::Color(value, value, value));
@@ -35,7 +33,7 @@ void refreshImage(sf::Image &image,const pg::PerlinNoiseUniformFloat<3> &noise,
 void TestPerlinNoise(pg::StdNumberGenerator &rngenerator)
 {
     auto noise = pg::PerlinNoiseUniformFloat<3>
-            (rngenerator, {NOISE_DIM_X, NOISE_DIM_Y, NOISE_DIM_Z});
+            (rngenerator);
 
     sf::Image image;
     image.create(WIDTH, HEIGHT);
@@ -68,9 +66,9 @@ void TestPerlinNoise(pg::StdNumberGenerator &rngenerator)
             z = 0;
             velocity *= -1;
         }
-        else if(z >= NOISE_DIM_Z)
+        else if(z >= NOISE_DETAIL)
         {
-            z = NOISE_DIM_Z - velocity;
+            z = NOISE_DETAIL - velocity;
             velocity *= -1;
         }
 

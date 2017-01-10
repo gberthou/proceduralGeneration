@@ -67,7 +67,7 @@ class ColorGenerator : public pg::PropertyGenerator<float, Color>
         pg::DistributionUniformUint distribution;
 };
     
-void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
+void drawMesh(sf::RenderTexture &texture,
               pg::VoronoiMesh<float, Color> &mesh,
               size_t width, size_t height)
 {
@@ -79,7 +79,7 @@ void drawMesh(pg::StdNumberGenerator &rngenerator, sf::RenderTexture &texture,
             vpoint.x = x;
             vpoint.y = y;
 
-            Color color = mesh.SiteAt(rngenerator, vpoint).properties;
+            Color color = mesh.SiteAt(vpoint).properties;
             size_t i = (x+y*width)*4;
             pixels[i  ] = color.r;
             pixels[i+1] = color.g;
@@ -103,12 +103,13 @@ void TestVoronoi(pg::StdNumberGenerator &rngenerator)
     const unsigned int HEIGHT = 640;
 
     ColorGenerator colorGenerator;
-    pg::VoronoiMesh<float, Color> map(colorGenerator, 8, 8, 240, 240);
+    pg::VoronoiMesh<float, Color> map(rngenerator, colorGenerator, 8, 8, 240,
+                                      240);
 
     sf::RenderTexture texture;
     texture.create(WIDTH, HEIGHT);
    
-    drawMesh(rngenerator, texture, map, WIDTH, HEIGHT);
+    drawMesh(texture, map, WIDTH, HEIGHT);
 
     sf::Sprite sprite;
     sprite.setTexture(texture.getTexture());
