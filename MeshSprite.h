@@ -11,7 +11,8 @@ class MeshSprite : public sf::Sprite
 {
     public:
         MeshSprite(pg::VoronoiMesh<float, TileType> &mesh,
-                   size_t texWidth, size_t texHeight);
+                   size_t texWidth, size_t texHeight,
+                   float offsetX, float offsetY);
         virtual ~MeshSprite() = default;
 
     protected:

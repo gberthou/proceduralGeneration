@@ -11,18 +11,18 @@
     
 const unsigned int WIDTH = 640;
 const unsigned int HEIGHT = 640;
-const size_t NOISE_DETAIL = 8;
+const size_t NOISE_DETAIL = 32;
 
 void refreshImage(sf::Image &image, pg::PerlinNoiseUniformFloat<3> &noise,
                   float z)
 {
     for(unsigned int y = 0; y < HEIGHT; ++y)
     {
-        float fy = y / static_cast<float>(HEIGHT);
+        float fy = y * NOISE_DETAIL / static_cast<float>(HEIGHT);
 
         for(unsigned int x = 0; x < WIDTH; ++x)
         {
-            float fx = x / static_cast<float>(WIDTH);
+            float fx = x * NOISE_DETAIL / static_cast<float>(WIDTH);
             sf::Uint8 value = noise({fx, fy, z}) * 255.f;
 
             image.setPixel(x, y, sf::Color(value, value, value));

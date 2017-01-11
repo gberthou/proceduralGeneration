@@ -3,7 +3,7 @@
 
 #include "algorithm/VoronoiUtils.hpp"
 #include "random/StdNumberGenerator.hpp"
-#include "noise/PerlinNoise.hpp"
+#include "noise/PerlinNoise2.hpp"
 
 #include "TileType.h"
 

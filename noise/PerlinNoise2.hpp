@@ -95,19 +95,6 @@ namespace pg
 
             T operator()(const Tuple &tuple)
             {
-                /*
-                std::array<int, DIM> coord;
-                Tuple localCoord;
-                for(size_t i = 0; i < DIM; ++i)
-                {
-                    float tmp;
-                    localCoord[i] = std::modf(tuple[i], &tmp);
-                    coord[i]      = tmp;
-                }
-                auto tile = this->At(coord);
-                return tile(localCoord);
-                */
-
                 std::array<uint8_t, DIM> base;
                 // No need to initialize the array since
                 // computeLocalContribution already does it

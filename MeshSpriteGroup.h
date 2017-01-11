@@ -22,6 +22,7 @@ class MeshSpriteGroup : public sf::Drawable, public sf::Transformable
     protected:
         static const size_t SPRITE_DIM = 3;
         static const size_t SPRITE_COUNT = SPRITE_DIM * SPRITE_DIM;
+        static const size_t NOISE_DETAIL = 8;
 
         size_t texWidth;
         size_t texHeight;

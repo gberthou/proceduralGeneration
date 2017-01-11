@@ -3,18 +3,17 @@
 #include "MeshSprite.h"
 
 MeshSprite::MeshSprite(pg::VoronoiMesh<float, TileType> &mesh,
-                       size_t texWidth, size_t texHeight)
+                       size_t texWidth, size_t texHeight,
+                       float offsetX, float offsetY)
 {
     sf::Uint8 *pixels = new sf::Uint8[texWidth * texHeight * 4];
-    if(!pixels)
-        throw std::runtime_error("Cannot allocate pixel array");
 
     for(size_t y = 0; y < texHeight; ++y)
         for(size_t x = 0; x < texWidth; ++x)
         {
             pg::VPoint<float> vpoint;
-            vpoint.x = x;
-            vpoint.y = y;
+            vpoint.x = x + offsetX;
+            vpoint.y = y + offsetY;
 
             TileType isIsland = mesh.SiteAt(vpoint).properties;
             size_t i = (x + y * texWidth) * 4;
